@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: KooshaPari/template-commons/.github/workflows/reusable-rust-ci.yml@main
+    with:
+      crate-name: phenotype-cipher
+      test-features: --all-features
+    secrets:
+      codecov-token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,13 @@
+# Cargo-nextest configuration for phenotype-cipher
+
+[profile.default]
+timeout = { per_test = 180, per_item = 120 }
+formatter = "pretty"
+failure-output = "immediate"
+show_skipped = true
+fail-fast = false
+retries = 2
+
+[[profile.default.overrides]]
+filter = "test(crypto::)"
+threads = 1

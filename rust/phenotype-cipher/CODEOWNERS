@@ -1,0 +1,25 @@
+# Code Owners for phenotype-cipher
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global ownership - Default maintainers
+* @phenotype-maintainers
+
+# Crypto/cipher implementations
+/src/core/ @phenotype-security
+
+# CI/CD configuration
+/.github/workflows/ @phenotype-infra
+
+# Documentation
+*.md @phenotype-docs
+/docs/ @phenotype-docs
+
+# Tests
+/tests/ @phenotype-maintainers
+
+# Security policies
+SECURITY.md @phenotype-security
+
+# Dependency changes
+Cargo.toml @phenotype-security @phenotype-maintainers
+Cargo.lock @phenotype-security @phenotype-maintainers

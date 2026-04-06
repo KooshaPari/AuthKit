@@ -1,0 +1,72 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+    after_n_builds: 1
+
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+        base: auto
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: error
+        only_pulls: false
+        paths: null
+        flags: null
+
+    patch:
+      default:
+        target: 85%
+        threshold: 2%
+        base: auto
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: error
+        only_pulls: true
+        paths: null
+        flags: null
+
+    changes:
+      default:
+        target: auto
+        threshold: 2%
+        base: auto
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: error
+        only_pulls: false
+        paths: null
+
+comment:
+  layout: "reach, diff, flags, files, footer"
+  behavior: default
+  require_changes: false
+  require_head: yes
+  require_base: yes
+  hide_project_coverage: false
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+ignore:
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/__tests__/**"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/vendor/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "examples/**"
+  - "docs/**"

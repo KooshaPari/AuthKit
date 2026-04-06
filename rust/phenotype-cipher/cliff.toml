@@ -1,0 +1,89 @@
+# git-cliff configuration for Rust projects
+# https://git-cliff.org
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are documented here.
+Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`
+
+"""
+body = """
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}\
+{{ commit.message | upper_first }}\
+{% if commit.breaking %} [**BREAKING**]{% endif %} \
+([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/commit/{{ commit.id }}))\
+{% if commit.github.pr_number %} ([#{{ commit.github.pr_number }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/pull/{{ commit.github.pr_number }})){% endif %}\
+{% endfor %}
+{% endfor %}\n
+"""
+trim = true
+footer = """
+{% for commit in commits %}
+{% if commit.breaking %}
+{% if not breaking_committed %}
+## Breaking Changes
+{% endif %}\
+- **{{ commit.scope | default(value="general") }}**: {{ commit.message }}
+{% raw %}  {% endraw %}[{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/commit/{{ commit.id }})
+{% set breaking_committed = true %}
+{% endif %}
+{% endfor %}
+"""
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+commit_preprocessors = [
+    # Remove issue references from commit messages
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+    # Clean up PR references
+    { pattern = '\(#([0-9]+)\)', replace = "" },
+]
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Refactoring" },
+    { message = "^docs", group = "Documentation" },
+    { message = "^test", group = "Testing" },
+    { message = "^chore", group = "Chores" },
+    { message = "^ci", group = "CI/CD" },
+    { message = "^revert", group = "Reverts" },
+    { message = "^build", group = "Build System" },
+    { message = "^style", group = "Styling" },
+    { body = "^.+", group = "Other" },
+]
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9]*"
+skip_tags = "v0\\.0\\.0|v0\\.1\\.0-alpha"
+ignore_tags = ""
+topo_order = false
+sort_commits = "oldest"
+
+[remote.github]
+owner = "KooshaPari"
+repo = "phenotype-cipher"
+
+[bump]
+features_always_bump_minor = false
+breaking_always_bump_major = true
+
+[context]
+timestamp_format = "%Y-%m-%d"
+
+# Rust-specific: Link to crates.io when published
+# Uncomment and configure if published to crates.io:
+# [postprocessors]
+# crates_link = "https://crates.io/crates/REPLACE_CRATE_NAME"

@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "phenotype-bid",
+    "phenotype-cipher",
     "phenotype-content-hash",
     "phenotype-contracts",
     "phenotype-security-aggregator",

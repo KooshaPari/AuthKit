@@ -1,0 +1,21 @@
+# Cargo-deny configuration for phenotype-cipher
+
+[licenses]
+version = 2
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "MPL-2.0",
+    "Zlib",
+    "Unlicense",
+]
+
+[sources]
+unknown-git = "deny"
+
+[advisories]
+ignore = []
