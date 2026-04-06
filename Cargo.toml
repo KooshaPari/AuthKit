@@ -33,7 +33,7 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 regex = "1"
-bcrypt = "0.15"
+bcrypt = "0.19"
 
 [dev-dependencies]
 tempfile = "3"
