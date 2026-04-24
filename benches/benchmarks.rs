@@ -1,6 +1,6 @@
 //! Benchmarks for Authvault
 
-use authkit::{
+use authvault::{
     adapters::hashers::{Argon2Hasher, BcryptHasher},
     domain::{
         auth::Authenticator,

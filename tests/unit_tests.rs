@@ -1,6 +1,6 @@
 //! Extended unit tests for domain layer
 
-use authkit::domain::{
+use authvault::domain::{
     auth::{AuthMethod, Authenticator, Claims},
     errors::AuthError,
     identity::{Permission, Role, User, UserId},
@@ -271,7 +271,7 @@ mod identity_tests {
     #[test]
     // Traces to: FR-AUTHVAULT-096
     fn test_builtin_roles() {
-        use authkit::domain::identity::roles;
+        use authvault::domain::identity::roles;
 
         let admin = roles::admin();
         assert!(admin.has_permission("*:*"));

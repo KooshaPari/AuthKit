@@ -1,6 +1,6 @@
 //! Integration tests for AuthService
 
-use authkit::{
+use authvault::{
     adapters::{
         hashers::Argon2Hasher,
         storage::{InMemorySessionStorage, InMemoryUserStorage},
@@ -9,7 +9,7 @@ use authkit::{
     domain::{
         policy::{Condition, Policy, PolicyEffect, PolicyEngine},
         ports::{PasswordHasher, SessionStorage, UserStorage},
-        AuthError, Authenticator, Permission, Role, Session, SessionId, User, UserId,
+        AuthError, Session, SessionId, User,
     },
 };
 use std::collections::HashMap;
@@ -60,7 +60,7 @@ async fn test_login_valid_credentials() {
     let (token, session) = result.unwrap();
     assert!(!token.is_empty());
     assert_ne!(session.user_id, "test@example.com"); // user_id is UUID, not email
-    assert_eq!(session.state, authkit::domain::session::SessionState::Active);
+    assert_eq!(session.state, authvault::domain::session::SessionState::Active);
 }
 
 #[tokio::test]
@@ -315,11 +315,11 @@ mod storage_tests {
 
         storage.create(&session).await.unwrap();
 
-        session.state = authkit::domain::session::SessionState::Revoked;
+        session.state = authvault::domain::session::SessionState::Revoked;
         storage.update(&session).await.unwrap();
 
         let found = storage.get_by_id(&session.id).await.unwrap();
-        assert_eq!(found.unwrap().state, authkit::domain::session::SessionState::Revoked);
+        assert_eq!(found.unwrap().state, authvault::domain::session::SessionState::Revoked);
     }
 }
 

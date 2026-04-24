@@ -1,7 +1,7 @@
 #![feature(test)]
 extern crate test;
 
-use authkit::{
+use authvault::{
     domain::policy::{Condition, Policy, PolicyEffect, PolicyEngine},
     domain::{Role, UserId},
 };
@@ -13,12 +13,12 @@ fn bench_claims_creation(c: &mut Criterion) {
     let roles = vec![Role::new("admin"), Role::new("user")];
 
     c.bench_function("claims_new", |b| {
-        b.iter(|| authkit::domain::auth::Claims::new(black_box(&user_id), black_box(&roles)));
+        b.iter(|| authvault::domain::auth::Claims::new(black_box(&user_id), black_box(&roles)));
     });
 }
 
 fn bench_token_generation(c: &mut Criterion) {
-    let auth = authkit::Authenticator::new("benchmark_secret_key_12345");
+    let auth = authvault::Authenticator::new("benchmark_secret_key_12345");
     let user_id = UserId::new();
     let roles = vec![Role::new("admin")];
 
@@ -28,7 +28,7 @@ fn bench_token_generation(c: &mut Criterion) {
 }
 
 fn bench_token_verification(c: &mut Criterion) {
-    let auth = authkit::Authenticator::new("benchmark_secret_key_12345");
+    let auth = authvault::Authenticator::new("benchmark_secret_key_12345");
     let user_id = UserId::new();
     let roles = vec![Role::new("admin")];
     let token = auth.generate_token(&user_id, &roles).unwrap();

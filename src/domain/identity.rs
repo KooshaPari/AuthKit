@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn test_role_hierarchy() {
         let admin = Role::new("admin").with_parent("moderator");
-        let moderator = Role::new("moderator").with_parent("user");
+        let _moderator = Role::new("moderator").with_parent("user");
 
         assert!(admin.implies("moderator"));
         assert!(!admin.implies("user"));

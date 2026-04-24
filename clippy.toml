@@ -1,38 +1,11 @@
-# Rust Linter Configuration
-# Phenotype Standard - Do not modify directly
-# Inherit from phenotype-governance/configs/rust/
+# Clippy configuration for authvault
+# Docs: https://doc.rust-lang.org/clippy/configuration.html
+#
+# NOTE: clippy.toml only accepts clippy-specific configuration keys
+# (e.g. msrv, cognitive-complexity-threshold). Workspace-style
+# [workspace] / [lints.rust] blocks belong in Cargo.toml, not here.
 
-[workspace]
-
-# Lint rules that agents must follow
-[lints.rust]
-workspace = true
-
-# Cargo clippy configuration
-[workspace.metadata.clippy]
-# Critical lints that must pass
-deny = [
-    "clippy::all",
-    "clippy::correctness",
-    "clippy::suspicious",
-]
-
-# Warn on these (not deny)
-warn = [
-    "clippy::complexity",
-    "clippy::perf",
-    "clippy::style",
-    "clippy::pedantic",
-]
-
-# Allow these exceptions
-allow = [
-    "clippy::module_name_repetitions",  # Often intentional in domain models
-    "clippy::too_many_arguments",       # Sometimes necessary for constructors
-]
-
-# Edition 2021 minimum
-rust-version = "1.70"
-
-# File size limits
-max-spec-recursion-depth = 10
+msrv = "1.75"
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 8
+type-complexity-threshold = 250
