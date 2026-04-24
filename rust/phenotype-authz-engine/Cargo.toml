@@ -1,5 +1,5 @@
 [package]
-name = "phenotype-policy-engine"
+name = "phenotype-authz-engine"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

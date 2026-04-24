@@ -25,7 +25,7 @@ AuthKit provides a complete authentication and authorization framework with:
 | `phenotype-content-hash` | Content hashing utilities |
 | `phenotype-bid` | Bidirectional encoding |
 | `phenotype-contracts` | Shared contract definitions |
-| `phenotype-policy-engine` | Policy evaluation engine |
+| `phenotype-authz-engine` | Policy evaluation engine |
 | `phenotype-security-aggregator` | Security aggregation |
 
 ## Quick Start

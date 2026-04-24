@@ -36,11 +36,7 @@ impl PasswordHasher for Argon2Hasher {
 
         PasswordHash::try_from(hash)
             .ok()
-            .map(|parsed| {
-                Argon2::default()
-                    .verify_password(password.as_bytes(), &parsed)
-                    .is_ok()
-            })
+            .map(|parsed| Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())
             .unwrap_or(false)
     }
 }

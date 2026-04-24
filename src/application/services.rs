@@ -41,29 +41,18 @@ impl AuthService {
         let email = email.into();
 
         // Check if user exists
-        if self
-            .user_storage
-            .get_by_email(&email)
-            .await
-            .map_err(AuthError::StorageError)?
-            .is_some()
+        if self.user_storage.get_by_email(&email).await.map_err(AuthError::StorageError)?.is_some()
         {
             return Err(AuthError::UserAlreadyExists);
         }
 
         // Hash password
-        let password_hash = self
-            .hasher
-            .hash(password)
-            .map_err(AuthError::PasswordHashError)?;
+        let password_hash = self.hasher.hash(password).map_err(AuthError::PasswordHashError)?;
 
         // Create user
         let user = User::new(email).with_password_hash(password_hash);
 
-        self.user_storage
-            .create(&user)
-            .await
-            .map_err(AuthError::StorageError)?;
+        self.user_storage.create(&user).await.map_err(AuthError::StorageError)?;
 
         Ok(user)
     }
@@ -99,10 +88,7 @@ impl AuthService {
         let mut session = Session::new(user.id.to_string());
         session = session.with_refresh_token(uuid::Uuid::new_v4().to_string());
 
-        self.session_storage
-            .create(&session)
-            .await
-            .map_err(AuthError::StorageError)?;
+        self.session_storage.create(&session).await.map_err(AuthError::StorageError)?;
 
         Ok((token, session))
     }
@@ -128,25 +114,16 @@ impl AuthService {
 
         session.revoke();
 
-        self.session_storage
-            .update(&session)
-            .await
-            .map_err(AuthError::StorageError)?;
+        self.session_storage.update(&session).await.map_err(AuthError::StorageError)?;
 
-        self.session_storage
-            .delete(session_id)
-            .await
-            .map_err(AuthError::StorageError)?;
+        self.session_storage.delete(session_id).await.map_err(AuthError::StorageError)?;
 
         Ok(())
     }
 
     /// Logout all sessions for a user.
     pub async fn logout_all(&self, user_id: &str) -> Result<(), AuthError> {
-        self.session_storage
-            .delete_by_user(user_id)
-            .await
-            .map_err(AuthError::StorageError)?;
+        self.session_storage.delete_by_user(user_id).await.map_err(AuthError::StorageError)?;
 
         Ok(())
     }
@@ -171,9 +148,6 @@ impl AuthService {
 
     /// Get a user by ID.
     pub async fn get_user(&self, user_id: &UserId) -> Result<Option<User>, AuthError> {
-        self.user_storage
-            .get_by_id(user_id)
-            .await
-            .map_err(AuthError::StorageError)
+        self.user_storage.get_by_id(user_id).await.map_err(AuthError::StorageError)
     }
 }
