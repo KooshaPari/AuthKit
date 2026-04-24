@@ -13,7 +13,7 @@ packages = []
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0"
+pytest = "^9.0"
 black = "^24.0"
 ruff = "^0.4"
 
