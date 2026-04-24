@@ -1,14 +1,35 @@
 version: 2
 updates:
-  - package-ecosystem: gomod
-    directory: /
-    schedule: {interval: daily}
-  - package-ecosystem: pip
-    directory: /
-    schedule: {interval: daily}
-  - package-ecosystem: npm
-    directory: /
-    schedule: {interval: daily}
-  - package-ecosystem: cargo
-    directory: /
-    schedule: {interval: daily}
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "automated"]
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "automated"]
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "automated"]
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "automated"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "github-actions"]
