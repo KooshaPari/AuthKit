@@ -134,12 +134,7 @@ pub struct Role {
 impl Role {
     /// Create a new role.
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            parents: Vec::new(),
-            permissions: Vec::new(),
-            description: None,
-        }
+        Self { name: name.into(), parents: Vec::new(), permissions: Vec::new(), description: None }
     }
 
     /// Add a parent role.
@@ -177,10 +172,7 @@ pub struct Permission {
 impl Permission {
     /// Create a new permission.
     pub fn new(resource: impl Into<String>, actions: Vec<String>) -> Self {
-        Self {
-            resource: resource.into(),
-            actions,
-        }
+        Self { resource: resource.into(), actions }
     }
 
     /// Check if this permission matches a resource and action.
@@ -249,7 +241,7 @@ mod tests {
     #[test]
     fn test_role_hierarchy() {
         let admin = Role::new("admin").with_parent("moderator");
-        let moderator = Role::new("moderator").with_parent("user");
+        let _moderator = Role::new("moderator").with_parent("user");
 
         assert!(admin.implies("moderator"));
         assert!(!admin.implies("user"));

@@ -1,6 +1,8 @@
 //! Extended unit tests for domain layer
 
-use authkit::domain::{
+use std::collections::HashMap;
+
+use authvault::domain::{
     auth::{AuthMethod, Authenticator, Claims},
     errors::AuthError,
     identity::{Permission, Role, User, UserId},
@@ -8,7 +10,6 @@ use authkit::domain::{
     session::{Session, SessionId, SessionState},
 };
 use chrono::{Duration, Utc};
-use std::collections::HashMap;
 
 mod claims_tests {
     use super::*;
@@ -271,7 +272,7 @@ mod identity_tests {
     #[test]
     // Traces to: FR-AUTHVAULT-096
     fn test_builtin_roles() {
-        use authkit::domain::identity::roles;
+        use authvault::domain::identity::roles;
 
         let admin = roles::admin();
         assert!(admin.has_permission("*:*"));

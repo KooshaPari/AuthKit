@@ -16,20 +16,11 @@ pub enum PolicyEffect {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Condition {
     /// Check if an attribute equals a value.
-    Eq {
-        attribute: String,
-        value: serde_json::Value,
-    },
+    Eq { attribute: String, value: serde_json::Value },
     /// Check if an attribute not equals a value.
-    Ne {
-        attribute: String,
-        value: serde_json::Value,
-    },
+    Ne { attribute: String, value: serde_json::Value },
     /// Check if an attribute is in a list.
-    In {
-        attribute: String,
-        values: Vec<serde_json::Value>,
-    },
+    In { attribute: String, values: Vec<serde_json::Value> },
     /// Check if an attribute matches a regex.
     Regex { attribute: String, pattern: String },
     /// Check if a numeric attribute is greater than.
@@ -41,11 +32,7 @@ pub enum Condition {
     /// Check if a string attribute ends with.
     EndsWith { attribute: String, suffix: String },
     /// Check time-based conditions.
-    Time {
-        attribute: String,
-        start: String,
-        end: String,
-    },
+    Time { attribute: String, start: String, end: String },
     /// Boolean AND of conditions.
     And { conditions: Vec<Condition> },
     /// Boolean OR of conditions.
@@ -58,23 +45,18 @@ impl Condition {
     /// Evaluate the condition against attributes.
     pub fn evaluate(&self, attributes: &HashMap<String, serde_json::Value>) -> bool {
         match self {
-            Condition::Eq { attribute, value } => attributes
-                .get(attribute)
-                .map(|v| v == value)
-                .unwrap_or(false),
-            Condition::Ne { attribute, value } => attributes
-                .get(attribute)
-                .map(|v| v != value)
-                .unwrap_or(true),
-            Condition::In { attribute, values } => attributes
-                .get(attribute)
-                .map(|v| values.contains(v))
-                .unwrap_or(false),
+            Condition::Eq { attribute, value } => {
+                attributes.get(attribute).map(|v| v == value).unwrap_or(false)
+            }
+            Condition::Ne { attribute, value } => {
+                attributes.get(attribute).map(|v| v != value).unwrap_or(true)
+            }
+            Condition::In { attribute, values } => {
+                attributes.get(attribute).map(|v| values.contains(v)).unwrap_or(false)
+            }
             Condition::Regex { attribute, pattern } => {
                 if let Some(serde_json::Value::String(s)) = attributes.get(attribute) {
-                    regex::Regex::new(pattern)
-                        .map(|r| r.is_match(s))
-                        .unwrap_or(false)
+                    regex::Regex::new(pattern).map(|r| r.is_match(s)).unwrap_or(false)
                 } else {
                     false
                 }
@@ -209,9 +191,7 @@ pub struct PolicyEngine {
 impl PolicyEngine {
     /// Create a new policy engine.
     pub fn new() -> Self {
-        Self {
-            policies: Vec::new(),
-        }
+        Self { policies: Vec::new() }
     }
 
     /// Add a policy.
@@ -340,10 +320,7 @@ mod tests {
         attrs.insert("classification".to_string(), serde_json::json!("public"));
         assert!(engine.evaluate("documents:123", "read", &attrs));
 
-        attrs.insert(
-            "classification".to_string(),
-            serde_json::json!("confidential"),
-        );
+        attrs.insert("classification".to_string(), serde_json::json!("confidential"));
         assert!(!engine.evaluate("documents:123", "read", &attrs));
     }
 }

@@ -1,38 +1,8 @@
 # Rust Linter Configuration
-# Phenotype Standard - Do not modify directly
-# Inherit from phenotype-governance/configs/rust/
+# Phenotype Standard
+#
+# Note: clippy.toml only accepts clippy-specific configuration keys.
+# Lint level configuration (deny/warn/allow) belongs in Cargo.toml [lints]
+# or on the command line via `cargo clippy -- -D warnings`.
 
-[workspace]
-
-# Lint rules that agents must follow
-[lints.rust]
-workspace = true
-
-# Cargo clippy configuration
-[workspace.metadata.clippy]
-# Critical lints that must pass
-deny = [
-    "clippy::all",
-    "clippy::correctness",
-    "clippy::suspicious",
-]
-
-# Warn on these (not deny)
-warn = [
-    "clippy::complexity",
-    "clippy::perf",
-    "clippy::style",
-    "clippy::pedantic",
-]
-
-# Allow these exceptions
-allow = [
-    "clippy::module_name_repetitions",  # Often intentional in domain models
-    "clippy::too_many_arguments",       # Sometimes necessary for constructors
-]
-
-# Edition 2021 minimum
-rust-version = "1.70"
-
-# File size limits
-max-spec-recursion-depth = 10
+too-many-arguments-threshold = 10
