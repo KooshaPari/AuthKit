@@ -12,3 +12,8 @@
 # Infrastructure
 /infra/* @KooshaPari
 /.github/workflows/* @KooshaPari
+/.github/ @KooshaPari
+
+# Security-sensitive
+/SECURITY.md @KooshaPari
+/.github/dependabot.yml @KooshaPari
