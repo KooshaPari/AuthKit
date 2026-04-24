@@ -103,10 +103,7 @@ impl SessionStorage for InMemorySessionStorage {
         let mut by_user = self.by_user.write().map_err(|e| e.to_string())?;
 
         sessions.insert(session.id.to_string(), session.clone());
-        by_user
-            .entry(session.user_id.clone())
-            .or_default()
-            .push(session.id.to_string());
+        by_user.entry(session.user_id.clone()).or_default().push(session.id.to_string());
 
         Ok(())
     }
