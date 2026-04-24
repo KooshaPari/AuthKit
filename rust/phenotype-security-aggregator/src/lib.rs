@@ -435,12 +435,6 @@ struct GitHubAlert {
     #[serde(rename = "security_vulnerability")]
     vulnerability: Option<GitHubVulnerability>,
     state: String,
-    #[serde(rename = "created_at")]
-    #[allow(dead_code)]
-    created_at: DateTime<Utc>,
-    #[serde(rename = "updated_at")]
-    #[allow(dead_code)]
-    updated_at: DateTime<Utc>,
     #[serde(rename = "dismissed_at")]
     dismissed_at: Option<DateTime<Utc>>,
 }
@@ -448,9 +442,6 @@ struct GitHubAlert {
 /// GitHub Security Advisory
 #[derive(Debug, Clone, Deserialize)]
 struct GitHubAdvisory {
-    #[serde(rename = "ghsa_id")]
-    #[allow(dead_code)]
-    ghsa_id: String,
     summary: String,
     description: String,
     severity: String,
@@ -468,17 +459,7 @@ struct GitHubCvss {
 /// GitHub Security Vulnerability
 #[derive(Debug, Clone, Deserialize)]
 struct GitHubVulnerability {
-    #[serde(rename = "first_patched_version")]
-    #[allow(dead_code)]
-    first_patched: Option<GitHubPatchedVersion>,
     package: GitHubPackage,
-}
-
-/// GitHub Patched Version
-#[derive(Debug, Clone, Deserialize)]
-struct GitHubPatchedVersion {
-    #[allow(dead_code)]
-    identifier: String,
 }
 
 /// GitHub Package
