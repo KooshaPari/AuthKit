@@ -14,7 +14,7 @@ python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
-black = "^24.0"
+black = "^26.3"
 ruff = "^0.15"
 
 [build-system]
