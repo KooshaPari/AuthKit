@@ -1,0 +1,21 @@
+# cargo-audit configuration for AuthKit
+#
+# Ignored advisories must be justified inline. Re-evaluate on each touch.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071 — RSA Marvin Attack (timing sidechannel, CVSS 5.9 medium)
+    #
+    # Pulled in transitively via sqlx-mysql, which the sqlx 0.8.x macro crate
+    # compiles regardless of feature selection. AuthKit only uses the postgres
+    # driver (see Cargo.toml: features = ["postgres", ...]) so the rsa code
+    # path is never executed at runtime.
+    #
+    # Upstream rsa crate has no fixed release. Removing requires upstream sqlx
+    # restructuring its macros crate to be backend-gated; tracked at
+    # https://github.com/launchbadge/sqlx/issues/3343.
+    #
+    # Risk acceptance: not exploitable in our deployment surface. Revisit when
+    # sqlx 0.9 ships or rsa publishes a constant-time fix.
+    "RUSTSEC-2023-0071",
+]
