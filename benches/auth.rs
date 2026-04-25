@@ -1,6 +1,3 @@
-#![feature(test)]
-extern crate test;
-
 use authvault::{
     domain::policy::{Condition, Policy, PolicyEffect, PolicyEngine},
     domain::{Role, UserId},
@@ -162,7 +159,7 @@ fn bench_policy_engine_with_many_policies(c: &mut Criterion) {
 
 fn bench_user_id_creation(c: &mut Criterion) {
     c.bench_function("user_id_creation", |b| {
-        b.iter(|| UserId::new());
+        b.iter(UserId::new);
     });
 }
 

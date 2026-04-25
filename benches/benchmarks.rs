@@ -6,6 +6,7 @@ use authvault::{
         auth::Authenticator,
         identity::{Permission, Role, User, UserId},
         policy::{Condition, Policy, PolicyEffect, PolicyEngine},
+        ports::PasswordHasher,
         session::Session,
     },
 };
