@@ -1,5 +1,8 @@
 name: Doc Links
 on: [push, pull_request]
+
+permissions:
+  contents: read
 jobs:
   links:
     runs-on: ubuntu-latest
