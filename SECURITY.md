@@ -2,30 +2,16 @@
 
 ## Reporting a Vulnerability
 
-We take security seriously. **Please do not file public issues for security vulnerabilities.**
+If you discover a security vulnerability in **AuthKit**, please report it privately via GitHub's security advisories:
 
-To report a vulnerability, use GitHub's private vulnerability reporting:
+- https://github.com/KooshaPari/AuthKit/security/advisories/new
 
-  https://github.com/KooshaPari/AuthKit/security/advisories/new
+Please do **not** open a public issue for security reports. We will acknowledge receipt within 72 hours and provide a remediation timeline based on severity.
 
-Provide:
-- Affected version(s) and component(s)
-- Reproduction steps or proof-of-concept
-- Impact assessment (confidentiality / integrity / availability)
-- Suggested mitigation if known
+## Scope
 
-We aim to acknowledge within 72 hours and provide a remediation timeline within 7 days.
+This policy covers the latest released version on the `main` branch. Older releases are not actively maintained.
 
-## Supported Versions
+## Disclosure
 
-| Version | Supported |
-|---------|-----------|
-| latest  | yes       |
-| older   | best-effort |
-
-## Public vs Private Disclosure
-
-- **Private**: vulnerabilities affecting confidentiality, integrity, or availability — use the advisory link above.
-- **Public**: hardening suggestions, non-exploitable defects, dependency hygiene — file a normal issue.
-
-Coordinated disclosure is preferred. We will credit reporters in the advisory unless anonymity is requested.
+We follow a coordinated disclosure model. Once a fix is available and deployed, we will publish a public advisory crediting the reporter (unless anonymity is requested).
