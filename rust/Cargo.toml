@@ -5,7 +5,6 @@ members = [
     "phenotype-content-hash",
     "phenotype-contracts",
     "phenotype-security-aggregator",
-    "phenotype-policy-engine",
 ]
 
 [workspace.package]
