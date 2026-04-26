@@ -8,11 +8,21 @@ Extends parent governance. See the following for canonical definitions:
 
 ## Project Overview
 
-- **Name:** AuthKit
-- **Description:** 
+- **Name:** AuthKit (formerly AuthVault)
+- **Description:** Pre-extraction staging repo for shared Phenotype infrastructure crates destined for `phenoShared`. Despite the name, no authentication SDK code currently lives here — the crates checked in are general-purpose infrastructure (bid, content-hash, contracts, policy-engine, security-aggregator).
 - **Location:** repos/AuthKit
-- **Language Stack:** [Primary languages]
-- **Status:** [Active/Archived/Experimental]
+- **Language Stack:** Rust (edition 2021)
+- **Status:** Experimental / pre-extraction staging
+
+## Current Crates (`rust/`)
+
+- `phenotype-bid`
+- `phenotype-content-hash`
+- `phenotype-contracts`
+- `phenotype-policy-engine`
+- `phenotype-security-aggregator`
+
+These are slated for migration to `phenoShared` once their APIs stabilize. Do **not** treat this repo as a published auth SDK — any older references to `authkit-core` / `authkit-provider-*` / multi-language bindings are aspirational and not implemented.
 
 ## AgilePlus Mandate
 
@@ -26,27 +36,22 @@ All work MUST be tracked in AgilePlus:
 
 From this repository root:
 ```bash
-# Linting and formatting (adjust for project language)
+cd rust
 cargo clippy --workspace -- -D warnings
 cargo fmt --check
-
-# Testing
 cargo test --workspace
-
-# Documentation validation
-vale docs/
 ```
 
 ## Worktree & Git Discipline
 
-- Feature work uses repo-specific worktrees: `repos/[PROJECT]-wtrees/<topic>/`
+- Feature work uses repo-specific worktrees: `repos/AuthKit-wtrees/<topic>/`
 - Canonical repo stays on `main` except during explicit merge operations
 - All feature branches are temporary; integrate via pull request or squash commit
 - See parent governance for non-destructive change protocol
 
 ## Cross-Project Reuse
 
-During development, proactively identify code that is sharable across Phenotype repositories. Prefer extraction into existing shared modules; propose new shared packages when appropriate.
+The crates here are explicitly staged for cross-project reuse via `phenoShared`. When touching them, prefer changes that ease extraction (clean public API, no Phenotype-specific coupling, documented invariants).
 
 ## Related Documents
 
