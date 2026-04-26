@@ -1,5 +1,10 @@
 # AuthKit
 
+[![Build](https://img.shields.io/github/actions/workflow/status/KooshaPari/AuthKit/ci.yml?branch=main&label=build)](https://github.com/KooshaPari/AuthKit/actions)
+[![Release](https://img.shields.io/github/v/release/KooshaPari/AuthKit?include_prereleases&sort=semver)](https://github.com/KooshaPari/AuthKit/releases)
+[![License](https://img.shields.io/github/license/KooshaPari/AuthKit)](LICENSE)
+[![Phenotype](https://img.shields.io/badge/Phenotype-org-blueviolet)](https://github.com/KooshaPari)
+
 > **Status:** Pre-extraction staging repo. Not a published SDK.
 
 AuthKit (formerly AuthVault) is a pre-extraction staging repository for shared infrastructure crates that will eventually move to **phenoShared**. Despite the name, this repository does **not** currently contain authentication SDK code — that work is planned but not started. The crates currently checked in here are general-purpose Phenotype-org infrastructure being staged for extraction.
