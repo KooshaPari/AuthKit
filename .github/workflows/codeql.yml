@@ -42,12 +42,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
-          # Exclude test/bench/example fixtures from analysis to suppress
-          # rust/hard-coded-cryptographic-value false positives on test data.
-          paths-ignore: |
-            tests
-            benches
-            examples
+          config-file: .github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
