@@ -32,6 +32,7 @@ vendor/
 node_modules/
 dist/
 build/
+docs/.vitepress/dist/
 *.tsbuildinfo
 .npm
 .eslintcache
