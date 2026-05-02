@@ -5,7 +5,7 @@
 name = "AuthKit"
 version = "0.1.0"
 description = "Authentication & Security"
-authors = ["Phenotype Team <team@phenotype.dev>"]
+authors = ["Phenotype Team <team@phenotype.space>"]
 license = "MIT OR Apache-2.0"
 packages = []
 
