@@ -15,6 +15,16 @@ python = "^3.11"
 pytest = "^9.0.3"
 black = "^26.3.1"
 ruff = "^0.15"
+mypy = "^1.0"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
 
 [build-system]
 requires = ["poetry-core"]
