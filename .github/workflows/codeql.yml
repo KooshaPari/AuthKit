@@ -1,5 +1,9 @@
 name: CodeQL
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -37,7 +41,7 @@ jobs:
       matrix:
         language: [rust, python, actions]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
