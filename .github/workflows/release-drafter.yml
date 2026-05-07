@@ -3,6 +3,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  pull-requests: read
 
 on:
   push:
@@ -14,7 +17,8 @@ on:
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: release-drafter/release-drafter@v7
+      - uses: release-drafter/release-drafter@ec0763817cb51182ef86848b090642f2a47902aa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
