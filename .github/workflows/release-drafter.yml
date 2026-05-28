@@ -16,7 +16,7 @@ on:
 
 jobs:
   update_release_draft:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: release-drafter/release-drafter@ec0763817cb51182ef86848b090642f2a47902aa

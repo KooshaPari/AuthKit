@@ -18,7 +18,7 @@ on:
 jobs:
   scorecard:
     name: Scorecard analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       security-events: write
@@ -27,7 +27,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
         with:
           persist-credentials: false
       - name: Run Scorecard

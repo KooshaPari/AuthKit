@@ -607,26 +607,17 @@ AuthKit addresses these challenges by providing:
 ```
 AuthKit/
 ├── rust/
-│   ├── authkit-core/          # Core traits and types
-│   ├── authkit-oauth/         # OAuth 2.0 implementation
-│   ├── authkit-oidc/          # OIDC implementation
-│   ├── authkit-saml/          # SAML 2.0 implementation
-│   └── authkit-webauthn/      # WebAuthn implementation
-├── typescript/
-│   ├── packages/
-│   │   ├── core/              # Shared types
-│   │   ├── browser/           # Browser-specific flows
-│   │   ├── node/              # Server-side implementation
-│   │   ├── react/             # React hooks and components
-│   │   └── nextjs/            # Next.js integration
+│   ├── phenotype-content-hash/   # Content-addressable hashing utilities
+│   ├── phenotype-contracts/      # Cross-service contracts and interfaces
+│   └── phenotype-security-aggregator/ # Security signal aggregation
 ├── python/
-│   ├── authkit/               # Main package
-│   ├── authkit-fastapi/       # FastAPI integration
-│   └── authkit-django/        # Django integration
-└── go/
-    ├── authkit/               # Core module
-    ├── authkit-gin/           # Gin middleware
-    └── authkit-echo/          # Echo middleware
+│   ├── pheno-credentials/        # Credential management
+│   ├── pheno-auth/               # Auth package staging area
+│   └── pheno-security/           # Security helpers
+├── go/
+│   └── middleware/               # HTTP middleware utilities
+└── typescript/
+    └── (planned)
 ```
 
 #### 7.1.2 Common Abstractions

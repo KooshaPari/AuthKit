@@ -833,7 +833,7 @@ func generateSecureID() string {
 | PHENOTYPE_AUTHKIT_SOTA_001 | Informed by | SOTA research on session management patterns |
 | docs/SPEC.md | Specifies | AuthKit Specification defines session architecture |
 | ../python/pheno-credentials/ | Integrates with | Credential storage for session tokens |
-| ../rust/phenotype-policy-engine/ | Integrates with | Session context for policy evaluation |
+| external policy engine (planned) | Integrates with | Session context for policy evaluation |
 
 ---
 
