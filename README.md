@@ -1,3 +1,14 @@
+## Work State
+
+| Field | Value |
+|---|---|
+| Last commit | 2026-05-04 |
+| Open issues | 4 |
+| Open PRs | 4 |
+| Focus | Auth & identity infrastructure (pre-extraction staging) |
+
+Progress: ██████░░░░ 65%
+
 # AuthKit
 
 [![Build](https://img.shields.io/github/actions/workflow/status/KooshaPari/AuthKit/ci.yml?branch=main&label=build)](https://github.com/KooshaPari/AuthKit/actions)
