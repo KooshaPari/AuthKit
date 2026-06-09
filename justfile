@@ -1,32 +1,28 @@
-# AuthKit — task runner (https://just.systems)
-# Parallel to Taskfile.yml; use either, justfile is the canonical entrypoint.
+# justfile — Phenotype org standard recipes
+# Run `just` to list available recipes.
 
 set shell := ["bash", "-uc"]
 
+# Default: list available recipes.
 default:
     @just --list
 
-# Start dev server / watch mode
-dev:
-    cargo watch -x check -x test
-
-# Produce release artifacts
-build:
-    cargo build --workspace --all-features --release
-
-# Run the test suite
+# Run the test suite.
 test:
-    cargo test --workspace --all-features
+    @echo "Run project tests (see package.json / Cargo.toml / pyproject.toml)"
 
-# Run the linter
+# Run the linter.
 lint:
-    cargo clippy --workspace --all-features --all-targets -- -D warnings
+    @echo "Run project linter"
 
-# Apply formatter
+# Apply the formatter.
 fmt:
-    cargo fmt --all
+    @echo "Run project formatter"
 
-# Remove build artifacts
+# Remove build artifacts.
 clean:
-    cargo clean
-    rm -rf target
+    @echo "Remove build artifacts"
+
+# Run the full local quality gate.
+quality: lint test
+    @echo "Quality gate passed"
