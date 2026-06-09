@@ -1,0 +1,27 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          components: clippy
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@5d8c9297a2f4bf8e22f7e1e36c3c9f6a39d7b70b
+      - name: Build
+        run: cargo build --all-features --workspace
+      - name: Run tests
+        run: cargo test --all-features --workspace
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings

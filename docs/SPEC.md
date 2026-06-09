@@ -143,13 +143,11 @@ AuthKit/
 │               ├── manager.py
 │               └── resolver.py
 ├── go/                      # Go modules
-│   └── (planned)
+│   └── middleware/          # HTTP middleware utilities
 ├── rust/                    # Rust crates
-│   ├── phenotype-policy-engine/
-│   ├── phenotype-security-aggregator/
-│   ├── phenotype-contracts/
 │   ├── phenotype-content-hash/
-│   └── phenotype-bid/
+│   ├── phenotype-contracts/
+│   └── phenotype-security-aggregator/
 ├── typescript/              # TypeScript packages
 │   └── (planned)
 ├── pyproject.toml           # Python workspace configuration

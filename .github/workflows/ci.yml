@@ -1,4 +1,7 @@
 name: AuthKit CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -6,44 +9,48 @@ on:
   pull_request:
     branches: [main]
 
-
 permissions:
   contents: read
+  actions: read
+
 jobs:
   # Rust CI
   rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
       - name: Test Rust
         run: cd rust && cargo test --all-features
 
   # Python CI
   python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
       - name: Setup Python
-        uses: actions/setup-python@v5@a26af69be951a213d495a4c3e4e4022e16d87065
+        uses: actions/setup-python@a26af69be951a213d # v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a
       - name: Test Python
         run: cd python && poetry install && poetry run pytest
 
   # Go CI
   go:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
       - name: Setup Go
-        uses: actions/setup-go@v5@40f1582b2485089dde7abd97c1529aa768e1baff
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
         with:
           go-version: '1.25'
       - name: Test Go
@@ -51,12 +58,26 @@ jobs:
 
   # TypeScript CI
   typescript:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
+      - name: Detect TypeScript workspace
+        id: ts-present
+        run: |
+          if find typescript -type f \( -name '*.ts' -o -name '*.tsx' -o -name 'tsconfig.json' \) | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup Node
-        uses: actions/setup-node@v4@8f152de45cc393bb48ce5d89d36b731f54556e65
+        if: steps.ts-present.outputs.present == 'true'
+        uses: actions/setup-node@49933ea5288ce7e9b # v5
         with:
           node-version: '20'
       - name: Test TypeScript
-        run: cd typescript && npm install && npm test
+        if: steps.ts-present.outputs.present == 'true'
+        run: cd typescript && npm install && npm test -- --passWithNoTests
+      - name: Skip TypeScript workspace
+        if: steps.ts-present.outputs.present != 'true'
+        run: echo "TypeScript workspace not implemented yet; skipping CI test step."

@@ -1,4 +1,10 @@
 name: Release
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 on:
   push:
@@ -7,15 +13,16 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
 
       - name: Create Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
         with:
           draft: false
           generate_release_notes: true

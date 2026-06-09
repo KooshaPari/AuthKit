@@ -1,4 +1,12 @@
 name: Cargo Deny
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
 on:
   push:
     branches: [main]
@@ -8,10 +16,11 @@ on:
 
 jobs:
   cargo-deny:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
-      - uses: taiki-e/upload-rust-binary-action@v1
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
+      - uses: taiki-e/upload-rust-binary-action@f0d45ae91ee7b8ee928de7a9d04d893a08bcbec6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tool: cargo-deny

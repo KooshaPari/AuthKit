@@ -24,14 +24,13 @@ If you arrived here looking for a unified OAuth/OIDC/SAML/WebAuthn SDK: that doe
 
 ## Current Contents
 
-The `rust/` workspace currently contains five infrastructure crates:
+The `rust/` workspace currently contains four infrastructure crates:
 
 | Crate | Purpose |
 |-------|---------|
 | `phenotype-bid` | Bid / auction primitives shared across Phenotype services |
 | `phenotype-content-hash` | Content-addressable hashing utilities |
 | `phenotype-contracts` | Cross-service contract / interface definitions |
-| `phenotype-policy-engine` | Rule-based policy evaluation (TOML-configured) |
 | `phenotype-security-aggregator` | Security signal aggregation across sources |
 
 Build:
@@ -42,7 +41,7 @@ cd rust && cargo build --workspace && cargo test --workspace
 
 ## Roadmap
 
-1. **Now:** Stage and stabilize the five infrastructure crates above.
+1. **Now:** Stage and stabilize the four infrastructure crates above.
 2. **Next:** Extract them into `phenoShared` once their APIs are stable.
 3. **Later:** Reuse this repo (or a successor) for actual auth SDK work — at which point the README and crate layout will be rewritten to match.
 
@@ -57,3 +56,4 @@ Until step 3 happens, treat any reference to `authkit-core`, `authkit-provider-*
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+

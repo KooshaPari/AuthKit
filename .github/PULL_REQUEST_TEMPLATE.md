@@ -20,7 +20,7 @@
 - [ ] I have run local quality checks (`task quality` / `cargo test` / `npm run lint`).
 - [ ] I have added/updated relevant tests where applicable.
 - [ ] I have updated corresponding documentation (if needed).
-- [ ] No temporary placeholders (e.g., `TODO`, `FIXME`) are left in the submitted code.
+- [ ] No temporary work markers are left in the submitted code.
 
 ## Additional Notes (Optional)
 

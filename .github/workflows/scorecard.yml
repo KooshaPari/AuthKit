@@ -1,4 +1,13 @@
 name: Scorecard
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+  id-token: write
 
 on:
   push:
@@ -6,12 +15,11 @@ on:
   schedule:
     - cron: "0 0 * * 0"
 
-permissions: read-all
-
 jobs:
   scorecard:
     name: Scorecard analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       security-events: write
       id-token: write
@@ -19,16 +27,16 @@ jobs:
       actions: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
         with:
           persist-credentials: false
       - name: Run Scorecard
-        uses: ossf/scorecard-action@v2.4.3
+        uses: ossf/scorecard-action@99c09fe975337306107572b4fdf4db224cf8e2f2
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
       - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@ed410739ba306e4ebe5e123421a6bd694e494a2b
         with:
           sarif_file: results.sarif

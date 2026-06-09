@@ -1,4 +1,7 @@
 name: CodeQL
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -20,14 +23,16 @@ on:
   schedule:
     - cron: '0 6 * * 1'
 
-
 permissions:
   contents: read
+  actions: read
   security-events: write
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
@@ -37,12 +42,12 @@ jobs:
       matrix:
         language: [rust, python, actions]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - uses: github/codeql-action/init@v4
+      - uses: actions/checkout@e65b1c57a9578f1ebf20bb4f0e87f6e4c9a9b4a # v4
+      - uses: github/codeql-action/init@ed410739ba306e4ebe5e123421a6bd694e494a2b
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
           config-file: .github/codeql/codeql-config.yml
-      - uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/analyze@ed410739ba306e4ebe5e123421a6bd694e494a2b
         with:
           category: "/language:${{ matrix.language }}"

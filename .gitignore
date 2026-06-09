@@ -51,3 +51,9 @@ Thumbs.db
 .worktrees/
 .claude/worktrees/
 python/pheno-credentials/
+python/pheno-auth/
+python/pheno-credentials/
+python/pheno-security/
+
+# Local AgilePlus state
+.agileplus/

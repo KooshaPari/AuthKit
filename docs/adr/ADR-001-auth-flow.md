@@ -46,7 +46,7 @@ The Phenotype ecosystem requires a unified authentication flow that supports mul
 
 - Must work with existing **pheno-credentials** OAuth infrastructure
 - Must support both Python and Go implementations
-- Must integrate with Phenotype's existing policy engine (phenotype-policy-engine)
+- Must integrate with the Phenotype policy-engine boundary (external/planned)
 - Must comply with NIST SP 800-63B AAL2 minimum requirements
 - Must support the Phenotype organization hierarchy model
 
@@ -784,7 +784,7 @@ func (e *AuthError) Error() string {
 | PHENOTYPE_AUTHKIT_SOTA_001 | Informed by | SOTA research on OAuth 2.0/OIDC libraries and patterns |
 | docs/SPEC.md | Specifies | AuthKit Specification defines the complete system architecture |
 | ../python/pheno-credentials/ | Integrates with | Existing pheno-credentials OAuth flow automation |
-| ../rust/phenotype-policy-engine/ | Integrates with | Policy engine for authorization decisions |
+| external policy engine (planned) | Integrates with | Policy engine boundary for authorization decisions |
 
 ---
 
