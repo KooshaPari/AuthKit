@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "phenotype-auth-core",
+    "phenotype-authvault-application",
     "phenotype-authvault-domain",
     "phenotype-content-hash",
     "phenotype-contracts",
