@@ -14,9 +14,36 @@ workspace = true
 
 [dependencies]
 phenotype-authvault-domain = { path = "../phenotype-authvault-domain" }
+phenotype-authvault-adapters = { path = "../phenotype-authvault-adapters" }
 async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+phenotype-authvault-adapters = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+axum = { workspace = true }
+tower = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+
+[[bench]]
+name = "auth"
+harness = false
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[[bench]]
+name = "perf"
+harness = false
+
+[[example]]
+name = "serve_authvault"
+path = "examples/serve.rs"
