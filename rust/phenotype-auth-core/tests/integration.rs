@@ -9,9 +9,44 @@
 
 use chrono::Utc;
 use phenotype_auth_core::{
-    auth_health, build_info, health, AuthError, Permission, Role, Session, SessionId, Token, User,
-    UserId, VERSION,
+    auth_health, build_info, health, AuthError, Password, PasswordHasher, Permission, Role,
+    Session, SessionId, Token, User, UserId, VERSION,
 };
+
+#[test]
+fn password_hash_round_trip_and_verify() {
+    let mut hasher = Password::new_hasher();
+    let password = "my-secret-password";
+    let hash = Password::hash(password, &mut hasher).unwrap();
+    assert!(Password::verify(password, &hash, &mut hasher).unwrap());
+    assert!(!Password::verify("wrong-password", &hash, &mut hasher).unwrap());
+}
+
+#[test]
+fn password_hash_produces_different_hashes_for_same_password() {
+    let mut hasher_a = Password::new_hasher();
+    let mut hasher_b = Password::new_hasher();
+    let password = "same-password";
+    let hash_a = Password::hash(password, &mut hasher_a).unwrap();
+    let hash_b = Password::hash(password, &mut hasher_b).unwrap();
+    assert_ne!(hash_a, hash_b, "Argon2 salts must be unique per call");
+}
+
+#[test]
+fn password_hash_rejects_empty_and_long_passwords() {
+    let mut hasher = Password::new_hasher();
+    assert!(Password::hash("", &mut hasher).is_err());
+    let long = "a".repeat(73);
+    assert!(Password::hash(&long, &mut hasher).is_err());
+}
+
+#[test]
+fn password_hash_error_display_is_nonempty() {
+    let err = AuthError::PasswordHashError("argon2 failure".into());
+    let s = format!("{err}");
+    assert!(!s.is_empty());
+    assert!(s.contains("argon2") || s.contains("password"));
+}
 
 #[test]
 fn health_snapshot_is_consistent_with_build_info() {

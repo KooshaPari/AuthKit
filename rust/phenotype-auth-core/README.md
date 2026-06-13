@@ -43,6 +43,8 @@ strategy.
   matching the Eidolon §7.1 propagation pattern.
 - **`VERSION`** — sourced from `phenotype-build-info::pkg_version()`.
 - **`build_info()`** — re-export of the canonical `BuildInfo`.
+- **`password::PasswordHasher`** + **`Argon2Hasher`** — Argon2id password
+  hashing with `hash_password()` + `verify_password()`.
 
 ## Quick start
 

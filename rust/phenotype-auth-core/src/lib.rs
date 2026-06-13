@@ -53,6 +53,7 @@
 
 pub mod error;
 pub mod health;
+pub mod password;
 pub mod role;
 pub mod session;
 pub mod token;
@@ -60,6 +61,7 @@ pub mod user;
 
 pub use error::AuthError;
 pub use health::{auth_health, version_only_health, HealthSnapshot};
+pub use password::{Argon2Hasher, PasswordHasher};
 pub use role::{Permission, Role};
 pub use session::{Session, SessionId};
 pub use token::Token;
