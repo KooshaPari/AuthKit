@@ -1,0 +1,15 @@
+# Cargo build artifacts
+/target
+
+# IDE
+/.idea
+/.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.local
+*.local
