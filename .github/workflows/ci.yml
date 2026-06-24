@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: test (nightly)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Format check
+        run: cargo +nightly fmt -- --check
+      - name: Clippy
+        run: cargo +nightly clippy --all-targets -- -D warnings
+      - name: Build
+        run: cargo +nightly build --locked --all-features
+      - name: Test
+        run: cargo +nightly test --locked --all-features
+      - name: Doc
+        run: cargo +nightly doc --no-deps --all-features
+
+  deny:
+    name: deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust stable + cargo-deny
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v1
