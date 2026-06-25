@@ -22,7 +22,10 @@ struct InvalidStateBody {
 fn invalid_state_response() -> Response {
     (
         StatusCode::UNAUTHORIZED,
-        Json(InvalidStateBody { error: "invalid_state", description: INVALID_STATE_DESCRIPTION }),
+        Json(InvalidStateBody {
+            error: "invalid_state",
+            description: INVALID_STATE_DESCRIPTION,
+        }),
     )
         .into_response()
 }
@@ -42,16 +45,23 @@ fn cookie_value<'a>(cookie_header: &'a str, key: &str) -> Option<&'a str> {
 }
 
 fn extract_session_id(request: &Request) -> Option<&str> {
-    request.headers().get(header::COOKIE).and_then(|value| value.to_str().ok()).and_then(|cookie| {
-        cookie_value(cookie, "session_id")
-            .or_else(|| cookie_value(cookie, "authkit_session"))
-            .or_else(|| cookie_value(cookie, "authvault_session"))
-            .or_else(|| cookie_value(cookie, "sid"))
-    })
+    request
+        .headers()
+        .get(header::COOKIE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|cookie| {
+            cookie_value(cookie, "session_id")
+                .or_else(|| cookie_value(cookie, "authkit_session"))
+                .or_else(|| cookie_value(cookie, "authvault_session"))
+                .or_else(|| cookie_value(cookie, "sid"))
+        })
 }
 
 fn extract_state_token(request: &Request) -> Option<&str> {
-    request.uri().query().and_then(|query| query_param(query, "state"))
+    request
+        .uri()
+        .query()
+        .and_then(|query| query_param(query, "state"))
 }
 
 /// Middleware that rejects OAuth callbacks when `state` is not bound to the session cookie.
@@ -87,7 +97,10 @@ mod tests {
     fn router(store: Arc<dyn SessionStore>) -> Router {
         Router::new()
             .route("/oauth/callback", get(|| async { (StatusCode::OK, "ok") }))
-            .route_layer(axum::middleware::from_fn_with_state(store, enforce_pkce_state_session))
+            .route_layer(axum::middleware::from_fn_with_state(
+                store,
+                enforce_pkce_state_session,
+            ))
     }
 
     async fn body_text(response: Response) -> String {

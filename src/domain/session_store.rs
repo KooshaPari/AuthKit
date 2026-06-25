@@ -53,7 +53,10 @@ impl InMemorySessionStore {
 
     /// Create a store with a custom TTL.
     pub fn with_ttl(ttl: Duration) -> Self {
-        Self { inner: Mutex::new(HashMap::new()), ttl }
+        Self {
+            inner: Mutex::new(HashMap::new()),
+            ttl,
+        }
     }
 
     fn evict_expired(map: &mut HashMap<String, Entry>) {
@@ -74,7 +77,10 @@ impl SessionStore for InMemorySessionStore {
         Self::evict_expired(&mut map);
         map.insert(
             state_token.to_owned(),
-            Entry { session_id: session_id.to_owned(), expires_at: Utc::now() + self.ttl },
+            Entry {
+                session_id: session_id.to_owned(),
+                expires_at: Utc::now() + self.ttl,
+            },
         );
         Ok(())
     }
@@ -82,7 +88,10 @@ impl SessionStore for InMemorySessionStore {
     fn verify_state(&self, state_token: &str, session_id: &str) -> Result<bool> {
         let mut map = self.inner.lock().map_err(|_| SessionStoreError::Poisoned)?;
         Self::evict_expired(&mut map);
-        Ok(map.get(state_token).map(|entry| entry.session_id == session_id).unwrap_or(false))
+        Ok(map
+            .get(state_token)
+            .map(|entry| entry.session_id == session_id)
+            .unwrap_or(false))
     }
 
     fn revoke_state(&self, state_token: &str) -> Result<()> {
