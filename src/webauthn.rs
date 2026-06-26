@@ -126,12 +126,24 @@ impl AuthenticatorDataFlags {
     /// Encode back to byte.
     pub fn to_byte(self) -> u8 {
         let mut b = 0u8;
-        if self.up { b |= 0x01; }
-        if self.uv { b |= 0x04; }
-        if self.be { b |= 0x08; }
-        if self.bs { b |= 0x10; }
-        if self.at { b |= 0x40; }
-        if self.ed { b |= 0x80; }
+        if self.up {
+            b |= 0x01;
+        }
+        if self.uv {
+            b |= 0x04;
+        }
+        if self.be {
+            b |= 0x08;
+        }
+        if self.bs {
+            b |= 0x10;
+        }
+        if self.at {
+            b |= 0x40;
+        }
+        if self.ed {
+            b |= 0x80;
+        }
         b
     }
 }
@@ -160,7 +172,11 @@ impl AuthenticatorData {
         rp_id_hash.copy_from_slice(&bytes[..32]);
         let flags = AuthenticatorDataFlags::from_byte(bytes[32]);
         let sign_count = u32::from_be_bytes([bytes[33], bytes[34], bytes[35], bytes[36]]);
-        Ok(Self { rp_id_hash, flags, sign_count })
+        Ok(Self {
+            rp_id_hash,
+            flags,
+            sign_count,
+        })
     }
 }
 
@@ -223,7 +239,11 @@ pub struct WebAuthnConfig {
 impl WebAuthnConfig {
     /// Construct a new config with a sensible default TTL.
     pub fn new(rp_id: impl Into<String>, allowed_origins: Vec<String>) -> Self {
-        Self { rp_id: rp_id.into(), allowed_origins, challenge_ttl_secs: 60 }
+        Self {
+            rp_id: rp_id.into(),
+            allowed_origins,
+            challenge_ttl_secs: 60,
+        }
     }
 }
 
@@ -325,7 +345,9 @@ impl WebAuthnVerifier {
 
         // 4. Verify the challenge exists in the session store and consume it
         let key = format!("webauthn:create:{}:{}", self.config.rp_id, user_id);
-        self.session_store.verify_state(&key, challenge, "webauthn-challenge", None).await?;
+        self.session_store
+            .verify_state(&key, challenge, "webauthn-challenge", None)
+            .await?;
 
         // 5. Verify credential_id is not already registered (globally)
         let credentials_read = self.credentials.read().unwrap();
@@ -393,11 +415,15 @@ impl WebAuthnVerifier {
 
         // 4. Verify the challenge exists in the session store and consume it
         let key = format!("webauthn:get:{}:{}", self.config.rp_id, user_id);
-        self.session_store.verify_state(&key, challenge, "webauthn-challenge", None).await?;
+        self.session_store
+            .verify_state(&key, challenge, "webauthn-challenge", None)
+            .await?;
 
         // 5. Lookup credential + sign count check
         let mut credentials_write = self.credentials.write().unwrap();
-        let creds = credentials_write.get_mut(user_id).ok_or(WebAuthnError::CredentialNotFound)?;
+        let creds = credentials_write
+            .get_mut(user_id)
+            .ok_or(WebAuthnError::CredentialNotFound)?;
         let cred = creds
             .iter_mut()
             .find(|c| c.credential_id == credential_id)
@@ -418,7 +444,12 @@ impl WebAuthnVerifier {
 
     /// List credentials for a user.
     pub fn list_credentials(&self, user_id: &str) -> Vec<WebAuthnCredential> {
-        self.credentials.read().unwrap().get(user_id).cloned().unwrap_or_default()
+        self.credentials
+            .read()
+            .unwrap()
+            .get(user_id)
+            .cloned()
+            .unwrap_or_default()
     }
 }
 
@@ -470,7 +501,11 @@ mod tests {
         let rp_id_hash: [u8; 32] = Sha256::digest(rp_id.as_bytes()).into();
         AuthenticatorData {
             rp_id_hash,
-            flags: AuthenticatorDataFlags { up: true, uv: true, ..Default::default() },
+            flags: AuthenticatorDataFlags {
+                up: true,
+                uv: true,
+                ..Default::default()
+            },
             sign_count: 1,
         }
     }
@@ -591,7 +626,10 @@ mod tests {
         .await
         .unwrap();
         // Second attempt with same challenge should fail
-        let auth2 = AuthenticatorData { sign_count: 2, ..auth };
+        let auth2 = AuthenticatorData {
+            sign_count: 2,
+            ..auth
+        };
         let cd2 = client_data("webauthn.create", &challenge, "https://app.example.com");
         let err = v
             .verify_registration(
@@ -625,9 +663,14 @@ mod tests {
         .unwrap();
 
         let c2 = v.generate_challenge("alice", "get").await.unwrap();
-        let a2 = AuthenticatorData { sign_count: 5, ..a1 };
+        let a2 = AuthenticatorData {
+            sign_count: 5,
+            ..a1
+        };
         let cd2 = client_data("webauthn.get", &c2, "https://app.example.com");
-        v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id").await.unwrap();
+        v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id")
+            .await
+            .unwrap();
 
         // sign count should now be 5
         let creds = v.list_credentials("alice");
@@ -653,21 +696,39 @@ mod tests {
 
         // First auth succeeds
         let c2 = v.generate_challenge("alice", "get").await.unwrap();
-        let a2 = AuthenticatorData { sign_count: 5, ..a1 };
+        let a2 = AuthenticatorData {
+            sign_count: 5,
+            ..a1
+        };
         let cd2 = client_data("webauthn.get", &c2, "https://app.example.com");
-        v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id").await.unwrap();
+        v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id")
+            .await
+            .unwrap();
 
         // Second auth with sign_count = 5 (equal) should be rejected (replay)
         let c3 = v.generate_challenge("alice", "get").await.unwrap();
-        let a3 = AuthenticatorData { sign_count: 5, ..a1 };
+        let a3 = AuthenticatorData {
+            sign_count: 5,
+            ..a1
+        };
         let cd3 = client_data("webauthn.get", &c3, "https://app.example.com");
-        let err = v.verify_authentication("alice", &c3, &a3, &cd3, b"cred-id").await.unwrap_err();
+        let err = v
+            .verify_authentication("alice", &c3, &a3, &cd3, b"cred-id")
+            .await
+            .unwrap_err();
         assert!(matches!(err, WebAuthnError::CredentialNotFound));
     }
 
     #[tokio::test]
     async fn flags_byte_roundtrip() {
-        let flags = AuthenticatorDataFlags { up: true, uv: true, be: false, bs: true, at: true, ed: false };
+        let flags = AuthenticatorDataFlags {
+            up: true,
+            uv: true,
+            be: false,
+            bs: true,
+            at: true,
+            ed: false,
+        };
         let byte = flags.to_byte();
         assert_eq!(byte, 0x01 | 0x04 | 0x10 | 0x40);
         let decoded = AuthenticatorDataFlags::from_byte(byte);
