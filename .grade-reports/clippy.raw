@@ -1,0 +1,9 @@
+error: failed to join paths from `$LD_LIBRARY_PATH` together
+
+Check if any of path segments listed below contain an unterminated quote character or path separator:
+    "/mnt/c/Users/koosh/E:/cargo-target/debug/deps"
+    "/home/kooshapari/.rustup/toolchains/nightly-2026-06-23-x86_64-unknown-linux-gnu/lib"
+    "/home/kooshapari/.rustup/toolchains/nightly-2026-06-23-x86_64-unknown-linux-gnu/lib"
+
+Caused by:
+  path segment contains separator `:`
