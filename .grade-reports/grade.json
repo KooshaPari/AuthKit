@@ -1,0 +1,13 @@
+{
+  "project": "AuthKit",
+  "stack": "rust",
+  "mode": "fast",
+  "score": 2,
+  "max": 10,
+  "percentage": 20,
+  "grade": "F",
+  "checks": [
+    {"name":"build","status":"fail","score":0,"max":2,"detail":"error: failed to join paths from `$LD_LIBRARY_PATH` together  Check if any of path segments listed below contain an unterminated quote character or path separator:     "/mnt/c/Users/koosh/E:/cargo-target/debug/deps"     "/usr/lib" "},{"name":"test-unit","status":"fail","score":0,"max":3,"detail":"error: failed to join paths from `$LD_LIBRARY_PATH` together  Check if any of path segments listed below contain an unterminated quote character or path separator:     "/mnt/c/Users/koosh/E:/cargo-target/debug/deps"     "/usr/lib" "},{"name":"fmt","status":"pass","score":2,"max":2,"detail":""},{"name":"clippy","status":"fail","score":0,"max":2,"detail":"error: failed to join paths from `$LD_LIBRARY_PATH` together  Check if any of path segments listed below contain an unterminated quote character or path separator:     "/mnt/c/Users/koosh/E:/cargo-target/debug/deps"     "/home/kooshapari/.rustup/toolchains/nightly-2026-06-23-x86_64-unknown-linux-gnu/lib" "},{"name":"deny","status":"skipped","score":0,"max":1,"detail":"skipped in fast mode"},{"name":"doc","status":"fail","score":0,"max":1,"detail":"error: failed to join paths from `$LD_LIBRARY_PATH` together  Check if any of path segments listed below contain an unterminated quote character or path separator:     "/mnt/c/Users/koosh/E:/cargo-target/debug/deps"     "/usr/lib" "},{"name":"test-snapshot","status":"skipped","score":0,"max":1,"detail":"skipped in fast mode"},{"name":"test-fuzz","status":"skipped","score":0,"max":1,"detail":"skipped in fast mode"},{"name":"coverage","status":"skipped","score":0,"max":2,"detail":"skipped in fast mode"},{"name":"audit","status":"skipped","score":0,"max":1,"detail":"skipped in fast mode"},{"name":"bench","status":"skipped","score":0,"max":1,"detail":"skipped in fast mode"}
+  ],
+  "timestamp": "2026-06-27T10:31:59Z"
+}
