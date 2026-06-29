@@ -8,6 +8,8 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use subtle::ConstantTimeEq;
+
 use chrono::{Duration, Utc};
 
 /// Result alias for the session-state binding port.
@@ -90,7 +92,13 @@ impl SessionStore for InMemorySessionStore {
         Self::evict_expired(&mut map);
         Ok(map
             .get(state_token)
-            .map(|entry| entry.session_id == session_id)
+            .map(|entry| {
+                entry
+                    .session_id
+                    .as_bytes()
+                    .ct_eq(session_id.as_bytes())
+                    .into()
+            })
             .unwrap_or(false))
     }
 
@@ -151,5 +159,17 @@ mod tests {
         store.bind_state("state-1", "session-2").unwrap();
         assert!(!store.verify_state("state-1", "session-1").unwrap());
         assert!(store.verify_state("state-1", "session-2").unwrap());
+    }
+
+    /// Constant-time compare: a session id of the same byte-length as the
+    /// stored one but differing in content must be rejected.  This exercises
+    /// the `ConstantTimeEq` branch and guards against a regression to `==`.
+    #[test]
+    fn constant_time_compare_rejects_same_length_wrong_session() {
+        let store = InMemorySessionStore::new();
+        // Both ids are 12 bytes; only identical bytes should pass.
+        store.bind_state("state-x", "aaaaaaaaaaaa").unwrap();
+        assert!(!store.verify_state("state-x", "bbbbbbbbbbbb").unwrap());
+        assert!(store.verify_state("state-x", "aaaaaaaaaaaa").unwrap());
     }
 }
