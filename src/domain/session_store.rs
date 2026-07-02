@@ -20,6 +20,11 @@ pub type Result<T> = std::result::Result<T, SessionStoreError>;
 pub enum SessionStoreError {
     #[error("session store lock poisoned")]
     Poisoned,
+    /// The store has reached its configured `max_entries` ceiling.  Callers
+    /// should surface a 503 to the OAuth callback or rotate to a backend
+    /// with bounded memory.
+    #[error("session store at capacity (max_entries={0})")]
+    AtCapacity(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -40,25 +45,51 @@ pub trait SessionStore: Send + Sync {
     fn revoke_state(&self, state_token: &str) -> Result<()>;
 }
 
+/// Default capacity for the in-memory store when the caller does not pick
+/// one.  Sized to fit a few thousand pending OAuth callbacks without
+/// ballooning — see L25 in the v37 audit.
+pub const DEFAULT_MAX_ENTRIES: usize = 65_536;
+
 /// Thread-safe in-memory `SessionStore` implementation with TTL eviction.
 #[derive(Debug)]
 pub struct InMemorySessionStore {
     inner: Mutex<HashMap<String, Entry>>,
     ttl: Duration,
+    max_entries: usize,
 }
 
 impl InMemorySessionStore {
-    /// Create a store with the default 15 minute binding TTL.
+    /// Create a store with the default 15 minute binding TTL and
+    /// [`DEFAULT_MAX_ENTRIES`] capacity.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Create a store with a custom TTL.
+    /// Create a store with a custom TTL and the default capacity.
     pub fn with_ttl(ttl: Duration) -> Self {
+        Self::with_capacity(ttl, DEFAULT_MAX_ENTRIES)
+    }
+
+    /// Create a store with a custom TTL and a hard capacity ceiling.
+    ///
+    /// `max_entries == 0` is treated as unbounded — useful for tests that
+    /// want to opt out of the cap without rewriting call sites.
+    pub fn with_capacity(ttl: Duration, max_entries: usize) -> Self {
         Self {
             inner: Mutex::new(HashMap::new()),
             ttl,
+            max_entries,
         }
+    }
+
+    /// Current entry count.  Primarily for tests and metrics.
+    pub fn len(&self) -> usize {
+        self.inner.lock().map(|m| m.len()).unwrap_or(0)
+    }
+
+    /// `true` when no entries are currently bound.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     fn evict_expired(map: &mut HashMap<String, Entry>) {
@@ -69,7 +100,7 @@ impl InMemorySessionStore {
 
 impl Default for InMemorySessionStore {
     fn default() -> Self {
-        Self::with_ttl(Duration::minutes(15))
+        Self::with_capacity(Duration::minutes(15), DEFAULT_MAX_ENTRIES)
     }
 }
 
@@ -77,6 +108,12 @@ impl SessionStore for InMemorySessionStore {
     fn bind_state(&self, state_token: &str, session_id: &str) -> Result<()> {
         let mut map = self.inner.lock().map_err(|_| SessionStoreError::Poisoned)?;
         Self::evict_expired(&mut map);
+        if self.max_entries != 0
+            && map.len() >= self.max_entries
+            && !map.contains_key(state_token)
+        {
+            return Err(SessionStoreError::AtCapacity(self.max_entries));
+        }
         map.insert(
             state_token.to_owned(),
             Entry {
@@ -171,5 +208,45 @@ mod tests {
         store.bind_state("state-x", "aaaaaaaaaaaa").unwrap();
         assert!(!store.verify_state("state-x", "bbbbbbbbbbbb").unwrap());
         assert!(store.verify_state("state-x", "aaaaaaaaaaaa").unwrap());
+    }
+
+    #[test]
+    fn new_store_is_empty() {
+        let store = InMemorySessionStore::new();
+        assert_eq!(store.len(), 0);
+        assert!(store.is_empty());
+    }
+
+    #[test]
+    fn capacity_rejects_overflow_but_allows_rebind() {
+        // Bound the store at exactly 2 entries so we can hit the ceiling
+        // without spinning through DEFAULT_MAX_ENTRIES.
+        let store = InMemorySessionStore::with_capacity(Duration::minutes(15), 2);
+        store.bind_state("s1", "sess-1").unwrap();
+        store.bind_state("s2", "sess-2").unwrap();
+        assert_eq!(store.len(), 2);
+
+        // Third distinct key must be rejected with AtCapacity — protects the
+        // server from an unbounded callback flood.
+        match store.bind_state("s3", "sess-3") {
+            Err(SessionStoreError::AtCapacity(2)) => {}
+            other => panic!("expected AtCapacity(2), got {other:?}"),
+        }
+
+        // Rebinding an existing key must still be allowed even at the
+        // ceiling (it's a replace, not a new allocation).
+        store.bind_state("s1", "sess-1-rebound").unwrap();
+        assert!(store.verify_state("s1", "sess-1-rebound").unwrap());
+        assert_eq!(store.len(), 2);
+    }
+
+    #[test]
+    fn capacity_zero_means_unbounded() {
+        // `0` is the documented opt-out sentinel for tests.
+        let store = InMemorySessionStore::with_capacity(Duration::minutes(15), 0);
+        for i in 0..128 {
+            store.bind_state(&format!("s{i}"), &format!("sess-{i}")).unwrap();
+        }
+        assert_eq!(store.len(), 128);
     }
 }

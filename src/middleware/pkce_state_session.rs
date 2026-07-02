@@ -9,6 +9,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use percent_encoding::percent_decode_str;
 use serde::Serialize;
+use tracing::{info, warn};
 
 use crate::domain::session_store::SessionStore;
 
@@ -91,15 +92,27 @@ pub async fn enforce_pkce_state_session(
     next: Next,
 ) -> Response {
     let Some(state_token) = extract_state_token(&request) else {
+        warn!(target: "authkit::audit", outcome = "reject", reason = "missing_or_oversized_state", "oauth callback rejected");
         return invalid_state_response();
     };
     let Some(session_id) = extract_session_id(&request) else {
+        warn!(target: "authkit::audit", outcome = "reject", reason = "missing_session_cookie", "oauth callback rejected");
         return invalid_state_response();
     };
 
     match store.verify_state(&state_token, session_id) {
-        Ok(true) => next.run(request).await,
-        Ok(false) | Err(_) => invalid_state_response(),
+        Ok(true) => {
+            info!(target: "authkit::audit", outcome = "allow", "oauth callback accepted");
+            next.run(request).await
+        }
+        Ok(false) => {
+            warn!(target: "authkit::audit", outcome = "reject", reason = "state_session_mismatch", "oauth callback rejected");
+            invalid_state_response()
+        }
+        Err(err) => {
+            warn!(target: "authkit::audit", outcome = "reject", reason = "store_error", error = %err, "oauth callback rejected");
+            invalid_state_response()
+        }
     }
 }
 
