@@ -13,6 +13,8 @@
 
 pub mod domain;
 pub mod middleware;
+pub mod totp;
 
 pub use domain::session_store::{InMemorySessionStore, SessionStore, SessionStoreError};
 pub use middleware::pkce_state_session::enforce_pkce_state_session;
+pub use totp::{TotpAlgorithm, TotpError, TotpSecret, TotpVerifier};
