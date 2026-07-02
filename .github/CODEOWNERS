@@ -1,0 +1,14 @@
+# CODEOWNERS for AuthKit.
+#
+# The single source of truth for code ownership lives in this file.  When a
+# pull request touches the matching path, the listed owners are requested for
+# review automatically.  Add or update owners here as the maintainer team
+# evolves.
+
+# Default owner for everything in the repo.
+/ @KooshaPari
+
+# Middleware surface — please loop in the auth team for any change here.
+/src/middleware/ @KooshaPari
+/src/domain/ @KooshaPari
+/.github/workflows/ @KooshaPari
