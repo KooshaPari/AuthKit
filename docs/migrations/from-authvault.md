@@ -88,14 +88,26 @@ impl SessionStore for MyRedisStore {
 5. `cargo test` -- AuthKit's conformance suite is in `src/domain/session_store.rs`.
 6. Open issues against AuthKit for any gaps you find.
 
-## Gap status (D1-blocker)
+## Gap status (D1 RESOLVED 2026-07-05)
 
-GAP-008 (PKCE middleware parity) and gap-010 (middleware adapter docs)
-are pending a port PR from Authvault. Tracked in
-`docs/sessions/2026-07-05-polyrepo-portfolio-strategy/05-decisions/02-D1-blocker-authvault-authkit-state.md`.
+GAP-008 (PKCE state->session binding at middleware) and gap-010
+(middleware adapter docs) that the original Authvault PRs claimed to
+add were actually **no-op commits** in the Authvault repo (identical
+tree SHAs across the supposed feature commits and their parents).
+The actual PKCE work shipped in AuthKit's initial landing commit
+`064b310 feat: AuthKit initial landing -- FR-AUTHV-018 PKCE state binding`
+(`src/middleware/pkce_state_session.rs`, ~292 lines, + the
+`src/domain/session_store.rs` hexagonal port, ~252 lines).
 
-The port will land as part of D1 resolution path A
-(https://github.com/KooshaPari/AuthKit/issues -- search for GAP-008, gap-010).
+**D1 path A is complete with 0 port PRs needed.** Authvault was set
+to GitHub Archived: True on 2026-07-05T04:54:25Z. The blocker doc at
+`docs/sessions/2026-07-05-polyrepo-portfolio-strategy/05-decisions/02-D1-blocker-authvault-authkit-state.md`
+and the resolution at
+`docs/sessions/2026-07-05-polyrepo-portfolio-strategy/05-decisions/03-D1-RESOLVED-no-port-needed.md`
+document the full audit.
+
+If you were looking for GAP-008/010 work to land in AuthKit: it already
+did (in 064b310). No further action needed for the migration path.
 
 ## Help
 
