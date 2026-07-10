@@ -17,15 +17,18 @@
 //! | AUT-004a / FR-001 | User registration | SHIPPED |
 //! | AUT-004a / FR-002 | Login (email/password) | SHIPPED |
 //! | AUT-004b / FR-003 | Session management | SHIPPED |
+//! | AUT-004c / FR-005 | RBAC roles/permissions | SHIPPED |
 
 pub mod domain;
 pub mod middleware;
+pub mod rbac;
 pub mod session;
 pub mod totp;
 pub mod user;
 
 pub use domain::session_store::{InMemorySessionStore, SessionStore, SessionStoreError};
 pub use middleware::pkce_state_session::enforce_pkce_state_session;
+pub use rbac::{Permission, Role, RoleStore, RoleStoreError};
 pub use session::{Session, SessionManager, SessionManagerError};
 pub use totp::{TotpAlgorithm, TotpError, TotpSecret};
 pub use user::{User, UserStore, UserStoreError};
