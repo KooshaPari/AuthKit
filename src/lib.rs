@@ -18,9 +18,11 @@
 //! | AUT-004a / FR-002 | Login (email/password) | SHIPPED |
 //! | AUT-004b / FR-003 | Session management | SHIPPED |
 //! | AUT-004c / FR-005 | RBAC roles/permissions | SHIPPED |
+//! | AUT-004d / FR-004 | Password reset / email verification | SHIPPED |
 
 pub mod domain;
 pub mod middleware;
+pub mod password_reset;
 pub mod rbac;
 pub mod session;
 pub mod totp;
@@ -28,6 +30,9 @@ pub mod user;
 
 pub use domain::session_store::{InMemorySessionStore, SessionStore, SessionStoreError};
 pub use middleware::pkce_state_session::enforce_pkce_state_session;
+pub use password_reset::{
+    InMemoryTokenStore, PasswordResetError, ResetToken, TokenKind, TokenStore,
+};
 pub use rbac::{Permission, Role, RoleStore, RoleStoreError};
 pub use session::{Session, SessionManager, SessionManagerError};
 pub use totp::{TotpAlgorithm, TotpError, TotpSecret};
