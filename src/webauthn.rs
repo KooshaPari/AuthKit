@@ -31,34 +31,21 @@
 //!         placeholder for the real ECDSA/RSA verify in AUT-SOTA-003b).
 //!      d. Verifies sign count > stored sign count (replay defense).
 //!
-//! ## Feature gate
-//!
-//! This module is feature-gated behind `webauthn` to keep the default
-//! build light. Production consumers will enable it via `features = ["webauthn"]`.
-//!
 //! ## Follow-ups
 //!
 //! - **AUT-SOTA-003b**: real CBOR attestation parsing + ECDSA signature
-//!   verification (using `esrs` crate for secp256r1, `rsa` for RSA-PSS,
-//!   `p256` for ES256). The trait is in place so this is additive.
+//!   verification (using `p256` crate for secp256r1, `rsa` for RSA-PSS).
 //! - **AUT-SOTA-003c**: assertion signature verify (full U2F-compatible
 //!   signature check over authenticator data + client data hash).
 //! - **AUT-SOTA-003d**: attestation trust path validation against
 //!   FIDO Alliance MDS (META blob).
-//!
-//! ## DAG units
-//!
-//! - AUT-SOTA-003 (this module) - trait + types + challenge storage + tests
-//! - AUT-SOTA-003b (follow-up) - CBOR attestation + ECDSA verify
-//! - AUT-SOTA-003c (follow-up) - assertion signature verify
-//! - AUT-SOTA-003d (follow-up) - MDS trust path
 #![allow(clippy::result_large_err)]
 
-use crate::domain::session_store::{SessionStore, SessionStoreError};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -82,9 +69,6 @@ pub enum WebAuthnError {
 
     #[error("credential not found")]
     CredentialNotFound,
-
-    #[error("session store error: {0}")]
-    SessionStore(#[from] SessionStoreError),
 
     #[error("base64 decode failed: {0}")]
     Base64(#[from] base64::DecodeError),
@@ -166,7 +150,7 @@ impl AuthenticatorData {
     /// Parse the first 37 bytes of an authenticator data blob.
     pub fn parse(bytes: &[u8]) -> Result<Self, WebAuthnError> {
         if bytes.len() < 37 {
-            return Err(WebAuthnError::UserPresenceNotSet); // generic "too short"
+            return Err(WebAuthnError::UserPresenceNotSet);
         }
         let mut rp_id_hash = [0u8; 32];
         rp_id_hash.copy_from_slice(&bytes[..32]);
@@ -181,10 +165,6 @@ impl AuthenticatorData {
 }
 
 /// Client data JSON (§5.10.1 of the WebAuthn spec).
-///
-/// Server-side validation: `type`, `challenge`, `origin`, optionally
-/// `crossOrigin`. `tokenBinding` is parsed for completeness but not
-/// enforced (it's rarely used and many IdPs don't support it).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectedClientData {
     #[serde(rename = "type")]
@@ -205,10 +185,6 @@ pub struct TokenBinding {
 }
 
 /// Stored WebAuthn credential public-key material.
-///
-/// In production this would be a tagged enum over ES256 / RS256 / PS256 /
-/// EdDSA. For AUT-SOTA-003 we accept raw bytes and defer crypto parsing
-/// to AUT-SOTA-003b.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WebAuthnCredential {
     /// Credential ID (raw bytes; base64url in transport).
@@ -217,7 +193,7 @@ pub struct WebAuthnCredential {
     pub public_key: Vec<u8>,
     /// Sign count for replay defense.
     pub sign_count: u32,
-    /// Friendly name (e.g., "Yubikey 5C", "iPhone 15 Touch ID").
+    /// Friendly name.
     #[serde(default)]
     pub label: Option<String>,
     /// Created-at timestamp (RFC3339).
@@ -227,17 +203,15 @@ pub struct WebAuthnCredential {
 /// Configuration for the verifier.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WebAuthnConfig {
-    /// Relying Party ID (e.g., "auth.example.com"). Must match the
-    /// origin's effective domain.
+    /// Relying Party ID (e.g., "auth.example.com").
     pub rp_id: String,
-    /// Allowed origins (e.g., `["https://app.example.com"]`).
+    /// Allowed origins.
     pub allowed_origins: Vec<String>,
-    /// Challenge TTL in seconds (default 60s per spec recommendation).
+    /// Challenge TTL in seconds (default 60s).
     pub challenge_ttl_secs: u64,
 }
 
 impl WebAuthnConfig {
-    /// Construct a new config with a sensible default TTL.
     pub fn new(rp_id: impl Into<String>, allowed_origins: Vec<String>) -> Self {
         Self {
             rp_id: rp_id.into(),
@@ -247,14 +221,18 @@ impl WebAuthnConfig {
     }
 }
 
-/// The WebAuthn verifier. Thread-safe (`Send + Sync`) via `Arc<SessionStore>`.
+struct ChallengeEntry {
+    challenge: String,
+    created_at: std::time::Instant,
+}
+
+/// The WebAuthn verifier. Thread-safe (`Send + Sync`) with internal stores.
 #[derive(Clone)]
 pub struct WebAuthnVerifier {
     config: Arc<WebAuthnConfig>,
-    session_store: Arc<dyn SessionStore>,
-    /// Credential registry: user_id -> Vec<WebAuthnCredential>.
-    /// In production this would be backed by Postgres (DAG unit AUT-SOTA-003b).
-    credentials: Arc<std::sync::RwLock<std::collections::HashMap<String, Vec<WebAuthnCredential>>>>,
+    challenges: Arc<RwLock<HashMap<String, ChallengeEntry>>>,
+    credentials:
+        Arc<RwLock<HashMap<String, Vec<WebAuthnCredential>>>>,
 }
 
 impl std::fmt::Debug for WebAuthnVerifier {
@@ -268,20 +246,16 @@ impl std::fmt::Debug for WebAuthnVerifier {
 }
 
 impl WebAuthnVerifier {
-    /// Create a new verifier.
-    pub fn new(config: WebAuthnConfig, session_store: Arc<dyn SessionStore>) -> Self {
+    pub fn new(config: WebAuthnConfig) -> Self {
         Self {
             config: Arc::new(config),
-            session_store,
-            credentials: Arc::new(std::sync::RwLock::new(std::collections::HashMap::new())),
+            challenges: Arc::new(RwLock::new(HashMap::new())),
+            credentials: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     /// Generate a fresh challenge for the given user + operation.
-    ///
-    /// Operation is either `"create"` (registration) or `"get"` (auth).
-    /// The challenge is a 32-byte random URL-safe-base64-no-pad string.
-    pub async fn generate_challenge(
+    pub fn generate_challenge(
         &self,
         user_id: &str,
         operation: &str,
@@ -289,23 +263,32 @@ impl WebAuthnVerifier {
         let bytes: [u8; 32] = rand_bytes();
         let challenge = URL_SAFE_NO_PAD.encode(bytes);
 
-        // Store the challenge keyed to (user_id, operation, rp_id) with TTL.
         let key = format!("webauthn:{}:{}:{}", operation, self.config.rp_id, user_id);
-        let ttl_secs = self.config.challenge_ttl_secs;
-        self.session_store
-            .bind_state(&key, &challenge, "webauthn-challenge", ttl_secs, None)
-            .await?;
+        let mut map = self.challenges.write().map_err(|_| {
+            WebAuthnError::ChallengeNotFound
+        })?;
+        map.insert(
+            key,
+            ChallengeEntry {
+                challenge: challenge.clone(),
+                created_at: std::time::Instant::now(),
+            },
+        );
 
         Ok(challenge)
     }
 
-    /// Verify a registration response.
-    ///
-    /// `attestation` is the parsed CBOR attestation (raw bytes for AUT-SOTA-003
-    /// until AUT-SOTA-003b lands real parsing).
-    /// `client_data_json` is the raw client data JSON string from the browser.
-    /// `credential_id` and `public_key` are the fields the JS side extracted.
-    pub async fn verify_registration(
+    fn consume_challenge(&self, key: &str) -> Option<String> {
+        let mut map = self.challenges.write().ok()?;
+        let entry = map.remove(key)?;
+        let elapsed = entry.created_at.elapsed().as_secs();
+        if elapsed > self.config.challenge_ttl_secs {
+            return None;
+        }
+        Some(entry.challenge)
+    }
+
+    pub fn verify_registration(
         &self,
         user_id: &str,
         challenge: &str,
@@ -334,22 +317,24 @@ impl WebAuthnVerifier {
         // 3. Verify challenge
         let client_data: CollectedClientData = serde_json::from_str(client_data_json)?;
         if client_data.ty != "webauthn.create" {
-            return Err(WebAuthnError::ChallengeNotFound); // generic
+            return Err(WebAuthnError::ChallengeNotFound);
         }
         if client_data.challenge != challenge {
             return Err(WebAuthnError::ChallengeNotFound);
         }
         if !self.config.allowed_origins.contains(&client_data.origin) {
-            return Err(WebAuthnError::ChallengeNotFound); // generic origin check
+            return Err(WebAuthnError::ChallengeNotFound);
         }
 
-        // 4. Verify the challenge exists in the session store and consume it
+        // 4. Verify and consume the challenge (replay protection)
         let key = format!("webauthn:create:{}:{}", self.config.rp_id, user_id);
-        self.session_store
-            .verify_state(&key, challenge, "webauthn-challenge", None)
-            .await?;
+        let stored = self.consume_challenge(&key);
+        match stored {
+            Some(c) if c == challenge => {}
+            _ => return Err(WebAuthnError::ChallengeNotFound),
+        }
 
-        // 5. Verify credential_id is not already registered (globally)
+        // 5. Verify credential_id is not already registered
         let credentials_read = self.credentials.read().unwrap();
         for (_uid, creds) in credentials_read.iter() {
             for c in creds {
@@ -378,8 +363,7 @@ impl WebAuthnVerifier {
         Ok(credential)
     }
 
-    /// Verify an authentication (assertion) response.
-    pub async fn verify_authentication(
+    pub fn verify_authentication(
         &self,
         user_id: &str,
         challenge: &str,
@@ -396,7 +380,7 @@ impl WebAuthnVerifier {
             });
         }
 
-        // 2. UP must be set (UV is recommended but not strictly required for auth)
+        // 2. UP must be set
         if !authenticator_data.flags.up {
             return Err(WebAuthnError::UserPresenceNotSet);
         }
@@ -413,11 +397,13 @@ impl WebAuthnVerifier {
             return Err(WebAuthnError::ChallengeNotFound);
         }
 
-        // 4. Verify the challenge exists in the session store and consume it
+        // 4. Verify and consume challenge
         let key = format!("webauthn:get:{}:{}", self.config.rp_id, user_id);
-        self.session_store
-            .verify_state(&key, challenge, "webauthn-challenge", None)
-            .await?;
+        let stored = self.consume_challenge(&key);
+        match stored {
+            Some(c) if c == challenge => {}
+            _ => return Err(WebAuthnError::ChallengeNotFound),
+        }
 
         // 5. Lookup credential + sign count check
         let mut credentials_write = self.credentials.write().unwrap();
@@ -436,13 +422,12 @@ impl WebAuthnVerifier {
 
         drop(credentials_write);
 
-        // 6. Verify signature (placeholder — real ECDSA in AUT-SOTA-003b)
+        // 6. Verify signature (placeholder)
         verify_signature(&cred.public_key, authenticator_data, client_data_json)?;
 
         Ok(())
     }
 
-    /// List credentials for a user.
     pub fn list_credentials(&self, user_id: &str) -> Vec<WebAuthnCredential> {
         self.credentials
             .read()
@@ -454,24 +439,18 @@ impl WebAuthnVerifier {
 }
 
 /// Placeholder signature verifier. Real implementation in AUT-SOTA-003b.
-///
-/// Currently this is a structural check only: it confirms the public key
-/// is non-empty. Real ECDSA / RSA-PSS verification against
-/// `authenticator_data || SHA256(client_data_json)` lands in AUT-SOTA-003b.
 pub fn verify_signature(
     public_key: &[u8],
     _authenticator_data: &AuthenticatorData,
     _client_data_json: &str,
 ) -> Result<(), WebAuthnError> {
     if public_key.is_empty() {
-        return Err(WebAuthnError::CredentialNotFound); // generic
+        return Err(WebAuthnError::CredentialNotFound);
     }
-    // Real verify: parse public_key as COSE_Key, then verify
-    // ECDSA( SHA256(authenticator_data || SHA256(client_data_json)), signature )
     Ok(())
 }
 
-/// Generate 32 random bytes. Delegates to getrandom.
+/// Generate 32 random bytes.
 fn rand_bytes<const N: usize>() -> [u8; N] {
     let mut bytes = [0u8; N];
     getrandom::getrandom(&mut bytes).expect("getrandom failed");
@@ -486,15 +465,14 @@ pub fn user_id_from_uuid(uuid: Uuid) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::session_store::InMemorySessionStore;
 
-    fn fixture() -> (WebAuthnVerifier, Arc<InMemorySessionStore>) {
-        let store = Arc::new(InMemorySessionStore::new());
-        let verifier = WebAuthnVerifier::new(
-            WebAuthnConfig::new("auth.example.com", vec!["https://app.example.com".into()]),
-            store.clone(),
-        );
-        (verifier, store)
+    fn fixture() -> (WebAuthnVerifier, Arc<WebAuthnVerifier>) {
+        let verifier = WebAuthnVerifier::new(WebAuthnConfig::new(
+            "auth.example.com",
+            vec!["https://app.example.com".into()],
+        ));
+        let arc = Arc::new(verifier.clone());
+        (verifier, arc)
     }
 
     fn fake_auth_data(rp_id: &str) -> AuthenticatorData {
@@ -520,17 +498,17 @@ mod tests {
         .to_string()
     }
 
-    #[tokio::test]
-    async fn generate_challenge_returns_32_byte_url_safe_b64() {
+    #[test]
+    fn generate_challenge_returns_32_byte_url_safe_b64() {
         let (v, _) = fixture();
-        let c = v.generate_challenge("alice", "create").await.unwrap();
+        let c = v.generate_challenge("alice", "create").unwrap();
         assert_eq!(URL_SAFE_NO_PAD.decode(&c).unwrap().len(), 32);
     }
 
-    #[tokio::test]
-    async fn verify_registration_happy_path() {
+    #[test]
+    fn verify_registration_happy_path() {
         let (v, _) = fixture();
-        let challenge = v.generate_challenge("alice", "create").await.unwrap();
+        let challenge = v.generate_challenge("alice", "create").unwrap();
         let auth = fake_auth_data("auth.example.com");
         let cd = client_data("webauthn.create", &challenge, "https://app.example.com");
         let cred = v
@@ -542,16 +520,15 @@ mod tests {
                 b"cred-id".to_vec(),
                 b"public-key".to_vec(),
             )
-            .await
             .unwrap();
         assert_eq!(cred.sign_count, 1);
         assert_eq!(v.list_credentials("alice").len(), 1);
     }
 
-    #[tokio::test]
-    async fn verify_registration_rp_id_mismatch_rejected() {
+    #[test]
+    fn verify_registration_rp_id_mismatch_rejected() {
         let (v, _) = fixture();
-        let challenge = v.generate_challenge("alice", "create").await.unwrap();
+        let challenge = v.generate_challenge("alice", "create").unwrap();
         let auth = fake_auth_data("evil.example.com");
         let cd = client_data("webauthn.create", &challenge, "https://app.example.com");
         let err = v
@@ -563,15 +540,14 @@ mod tests {
                 b"cred-id".to_vec(),
                 b"public-key".to_vec(),
             )
-            .await
             .unwrap_err();
         assert!(matches!(err, WebAuthnError::RpIdHashMismatch { .. }));
     }
 
-    #[tokio::test]
-    async fn verify_registration_no_user_presence_rejected() {
+    #[test]
+    fn verify_registration_no_user_presence_rejected() {
         let (v, _) = fixture();
-        let challenge = v.generate_challenge("alice", "create").await.unwrap();
+        let challenge = v.generate_challenge("alice", "create").unwrap();
         let mut auth = fake_auth_data("auth.example.com");
         auth.flags.up = false;
         let cd = client_data("webauthn.create", &challenge, "https://app.example.com");
@@ -584,15 +560,14 @@ mod tests {
                 b"cred-id".to_vec(),
                 b"public-key".to_vec(),
             )
-            .await
             .unwrap_err();
         assert!(matches!(err, WebAuthnError::UserPresenceNotSet));
     }
 
-    #[tokio::test]
-    async fn verify_registration_origin_not_allowed() {
+    #[test]
+    fn verify_registration_origin_not_allowed() {
         let (v, _) = fixture();
-        let challenge = v.generate_challenge("alice", "create").await.unwrap();
+        let challenge = v.generate_challenge("alice", "create").unwrap();
         let auth = fake_auth_data("auth.example.com");
         let cd = client_data("webauthn.create", &challenge, "https://evil.example.com");
         let err = v
@@ -604,15 +579,14 @@ mod tests {
                 b"cred-id".to_vec(),
                 b"public-key".to_vec(),
             )
-            .await
             .unwrap_err();
         assert!(matches!(err, WebAuthnError::ChallengeNotFound));
     }
 
-    #[tokio::test]
-    async fn verify_registration_challenge_replay_rejected() {
+    #[test]
+    fn verify_registration_challenge_replay_rejected() {
         let (v, _) = fixture();
-        let challenge = v.generate_challenge("alice", "create").await.unwrap();
+        let challenge = v.generate_challenge("alice", "create").unwrap();
         let auth = fake_auth_data("auth.example.com");
         let cd = client_data("webauthn.create", &challenge, "https://app.example.com");
         v.verify_registration(
@@ -623,16 +597,14 @@ mod tests {
             b"cred-id".to_vec(),
             b"public-key".to_vec(),
         )
-        .await
         .unwrap();
-        // Second attempt with same challenge should fail
+        // Second attempt with same challenge should fail (consumed)
         let auth2 = AuthenticatorData {
             sign_count: 2,
             ..auth
         };
         let cd2 = client_data("webauthn.create", &challenge, "https://app.example.com");
-        let err = v
-            .verify_registration(
+        let err = v.verify_registration(
                 "alice",
                 &challenge,
                 &auth2,
@@ -640,15 +612,14 @@ mod tests {
                 b"cred-id-2".to_vec(),
                 b"public-key-2".to_vec(),
             )
-            .await
             .unwrap_err();
-        assert!(matches!(err, WebAuthnError::SessionStore(_)));
+        assert!(matches!(err, WebAuthnError::ChallengeNotFound));
     }
 
-    #[tokio::test]
-    async fn verify_authentication_happy_path_increments_sign_count() {
+    #[test]
+    fn verify_authentication_happy_path_increments_sign_count() {
         let (v, _) = fixture();
-        let c1 = v.generate_challenge("alice", "create").await.unwrap();
+        let c1 = v.generate_challenge("alice", "create").unwrap();
         let a1 = fake_auth_data("auth.example.com");
         let cd1 = client_data("webauthn.create", &c1, "https://app.example.com");
         v.verify_registration(
@@ -659,28 +630,25 @@ mod tests {
             b"cred-id".to_vec(),
             b"public-key".to_vec(),
         )
-        .await
         .unwrap();
 
-        let c2 = v.generate_challenge("alice", "get").await.unwrap();
+        let c2 = v.generate_challenge("alice", "get").unwrap();
         let a2 = AuthenticatorData {
             sign_count: 5,
             ..a1
         };
         let cd2 = client_data("webauthn.get", &c2, "https://app.example.com");
         v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id")
-            .await
             .unwrap();
 
-        // sign count should now be 5
         let creds = v.list_credentials("alice");
         assert_eq!(creds[0].sign_count, 5);
     }
 
-    #[tokio::test]
-    async fn verify_authentication_replay_rejected_by_sign_count() {
+    #[test]
+    fn verify_authentication_replay_rejected_by_sign_count() {
         let (v, _) = fixture();
-        let c1 = v.generate_challenge("alice", "create").await.unwrap();
+        let c1 = v.generate_challenge("alice", "create").unwrap();
         let a1 = fake_auth_data("auth.example.com");
         let cd1 = client_data("webauthn.create", &c1, "https://app.example.com");
         v.verify_registration(
@@ -691,22 +659,20 @@ mod tests {
             b"cred-id".to_vec(),
             b"public-key".to_vec(),
         )
-        .await
         .unwrap();
 
         // First auth succeeds
-        let c2 = v.generate_challenge("alice", "get").await.unwrap();
+        let c2 = v.generate_challenge("alice", "get").unwrap();
         let a2 = AuthenticatorData {
             sign_count: 5,
             ..a1
         };
         let cd2 = client_data("webauthn.get", &c2, "https://app.example.com");
         v.verify_authentication("alice", &c2, &a2, &cd2, b"cred-id")
-            .await
             .unwrap();
 
-        // Second auth with sign_count = 5 (equal) should be rejected (replay)
-        let c3 = v.generate_challenge("alice", "get").await.unwrap();
+        // Second auth with sign_count = 5 (equal) should be rejected
+        let c3 = v.generate_challenge("alice", "get").unwrap();
         let a3 = AuthenticatorData {
             sign_count: 5,
             ..a1
@@ -714,13 +680,12 @@ mod tests {
         let cd3 = client_data("webauthn.get", &c3, "https://app.example.com");
         let err = v
             .verify_authentication("alice", &c3, &a3, &cd3, b"cred-id")
-            .await
             .unwrap_err();
         assert!(matches!(err, WebAuthnError::CredentialNotFound));
     }
 
-    #[tokio::test]
-    async fn flags_byte_roundtrip() {
+    #[test]
+    fn flags_byte_roundtrip() {
         let flags = AuthenticatorDataFlags {
             up: true,
             uv: true,
@@ -735,8 +700,8 @@ mod tests {
         assert_eq!(decoded, flags);
     }
 
-    #[tokio::test]
-    async fn auth_data_parse_too_short() {
+    #[test]
+    fn auth_data_parse_too_short() {
         let bytes = vec![0u8; 10];
         assert!(AuthenticatorData::parse(&bytes).is_err());
     }
