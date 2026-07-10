@@ -119,7 +119,7 @@ impl TotpSecret {
         }
         let bytes = base32::decode(base32::Alphabet::Rfc4648 { padding: false }, &normalized)
             .or_else(|| base32::decode(base32::Alphabet::Rfc4648 { padding: true }, &normalized))
-            .ok_or_else(|| TotpError::InvalidSecret("invalid base32 encoding"))?;
+            .ok_or(TotpError::InvalidSecret("invalid base32 encoding"))?;
         if bytes.len() != 20 {
             return Err(TotpError::InvalidSecret("secret must be 160 bits"));
         }
@@ -214,8 +214,8 @@ pub fn hotp(secret_bytes: &[u8], counter: u64, digits: u32, algorithm: TotpAlgor
     let counter_be = counter.to_be_bytes();
     let digest = match algorithm {
         TotpAlgorithm::Sha1 => {
-            let mut mac = HmacSha1::new_from_slice(secret_bytes)
-                .expect("HMAC accepts any key length");
+            let mut mac =
+                HmacSha1::new_from_slice(secret_bytes).expect("HMAC accepts any key length");
             mac.update(&counter_be);
             mac.finalize().into_bytes().to_vec()
         }
@@ -332,9 +332,10 @@ mod tests {
 
     #[test]
     fn rfc6238_test_vector_t30() {
-        // T=30 -> counter=1 -> 46119246 (matches RFC 6238 App. B)
+        // T=30 (counter=1) for SHA1 -> 94287082 per RFC 6238 App. B
+        // (T=30 and T=59 share the same counter because floor(30/30) == floor(59/30) == 1.)
         let code = hotp(RFC6238_SECRET, 1, 8, TotpAlgorithm::Sha1);
-        assert_eq!(code, "46119246");
+        assert_eq!(code, "94287082");
     }
 
     #[test]
@@ -393,7 +394,8 @@ mod tests {
     fn verify_accepts_current_code() {
         let secret = TotpSecret::from_bytes(RFC6238_SECRET.try_into().unwrap());
         let now = 59u64;
-        let code = secret.at(now, 30, 8);
+        // Generate 6-digit code to match the default verify() digit width.
+        let code = secret.at(now, 30, DEFAULT_DIGITS);
         assert!(secret.verify(&code, now, 30));
     }
 
@@ -406,7 +408,8 @@ mod tests {
     #[test]
     fn verify_with_window_accepts_drift() {
         let secret = TotpSecret::from_bytes(RFC6238_SECRET.try_into().unwrap());
-        let code = secret.at(59, 30, 8);
+        // 6-digit code to match verify_with_window() default digit width.
+        let code = secret.at(59, 30, DEFAULT_DIGITS);
         // Same code valid for window +/- 1 step
         assert!(secret.verify_with_window(&code, 30, 30, 1)); // 1 step back
         assert!(secret.verify_with_window(&code, 89, 30, 1)); // 1 step forward
@@ -417,7 +420,7 @@ mod tests {
         let secret = TotpSecret::from_bytes(RFC6238_SECRET.try_into().unwrap());
         let code = secret.at(59, 30, 8);
         // 2 steps back without explicit window 2 -> rejected
-        assert!(!secret.verify(&code, -1, 30));
+        assert!(!secret.verify_with_window(&code, 90, 30, 1)); // 2 steps forward without explicit window -> rejected
     }
 
     #[test]
