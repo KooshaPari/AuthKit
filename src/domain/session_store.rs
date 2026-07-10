@@ -25,6 +25,9 @@ pub enum SessionStoreError {
     /// with bounded memory.
     #[error("session store at capacity (max_entries={0})")]
     AtCapacity(usize),
+    /// Catch-all for adapter-specific errors.
+    #[error("{0}")]
+    Other(String),
 }
 
 #[derive(Debug, Clone)]
@@ -108,9 +111,7 @@ impl SessionStore for InMemorySessionStore {
     fn bind_state(&self, state_token: &str, session_id: &str) -> Result<()> {
         let mut map = self.inner.lock().map_err(|_| SessionStoreError::Poisoned)?;
         Self::evict_expired(&mut map);
-        if self.max_entries != 0
-            && map.len() >= self.max_entries
-            && !map.contains_key(state_token)
+        if self.max_entries != 0 && map.len() >= self.max_entries && !map.contains_key(state_token)
         {
             return Err(SessionStoreError::AtCapacity(self.max_entries));
         }
@@ -245,7 +246,9 @@ mod tests {
         // `0` is the documented opt-out sentinel for tests.
         let store = InMemorySessionStore::with_capacity(Duration::minutes(15), 0);
         for i in 0..128 {
-            store.bind_state(&format!("s{i}"), &format!("sess-{i}")).unwrap();
+            store
+                .bind_state(&format!("s{i}"), &format!("sess-{i}"))
+                .unwrap();
         }
         assert_eq!(store.len(), 128);
     }
