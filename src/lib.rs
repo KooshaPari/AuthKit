@@ -20,7 +20,9 @@
 //! | AUT-004c / FR-005 | RBAC roles/permissions | SHIPPED |
 //! | AUT-004d / FR-004 | Password reset / email verification | SHIPPED |
 //! | AUT-004e / FR-006 | Magic-link (passwordless) authentication | SHIPPED |
+//! | AUT-004f / FR-007 | API-key authentication for SDK / CLI clients | SHIPPED |
 
+pub mod api_key;
 pub mod domain;
 pub mod magic_link;
 pub mod middleware;
@@ -29,6 +31,11 @@ pub mod rbac;
 pub mod session;
 pub mod totp;
 pub mod user;
+
+pub use api_key::{
+    ApiKeyError, ApiKeyResolution, ApiKeyService, ApiKeyStore, ApiKeySummary, InMemoryApiKeyStore,
+    IssuedApiKey, API_KEY_PREFIX, KEY_BODY_HEX_CHARS, KEY_ID_HEX_CHARS,
+};
 
 pub use domain::session_store::{InMemorySessionStore, SessionStore, SessionStoreError};
 pub use magic_link::{
