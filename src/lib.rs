@@ -19,8 +19,10 @@
 //! | AUT-004b / FR-003 | Session management | SHIPPED |
 //! | AUT-004c / FR-005 | RBAC roles/permissions | SHIPPED |
 //! | AUT-004d / FR-004 | Password reset / email verification | SHIPPED |
+//! | AUT-004e / FR-006 | Magic-link (passwordless) authentication | SHIPPED |
 
 pub mod domain;
+pub mod magic_link;
 pub mod middleware;
 pub mod password_reset;
 pub mod rbac;
@@ -29,6 +31,10 @@ pub mod totp;
 pub mod user;
 
 pub use domain::session_store::{InMemorySessionStore, SessionStore, SessionStoreError};
+pub use magic_link::{
+    InMemoryMagicLinkStore, MagicLink, MagicLinkError, MagicLinkService, MagicLinkStore,
+    DEFAULT_MAGIC_LINK_TTL_SECS,
+};
 pub use middleware::pkce_state_session::enforce_pkce_state_session;
 pub use password_reset::{
     InMemoryTokenStore, PasswordResetError, ResetToken, TokenKind, TokenStore,
