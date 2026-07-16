@@ -29,6 +29,7 @@ pub mod middleware;
 pub mod password_reset;
 pub mod rbac;
 pub mod session;
+pub mod rate_limiter;
 pub mod totp;
 pub mod user;
 
@@ -43,6 +44,7 @@ pub use magic_link::{
     DEFAULT_MAGIC_LINK_TTL_SECS,
 };
 pub use middleware::pkce_state_session::enforce_pkce_state_session;
+pub use rate_limiter::{LimitTier, RateLimitError, RateLimiter};
 pub use password_reset::{
     InMemoryTokenStore, PasswordResetError, ResetToken, TokenKind, TokenStore,
 };
