@@ -13,6 +13,11 @@ into `Authvault` main before the archive marker (commit `c7994b9`).
 
 See `specs/requirements/authkit-frnfr.md` for the full traceability table.
 
+
+## Migrating from Authvault?
+
+See [docs/migrations/from-authvault.md](docs/migrations/from-authvault.md).
+
 ## Crate layout
 
 ```

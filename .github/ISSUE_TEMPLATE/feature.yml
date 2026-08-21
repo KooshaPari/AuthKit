@@ -1,0 +1,22 @@
+name: Feature request
+description: Propose a new AuthKit capability (RS256/ES256 signing, OIDC discovery, WebAuthn, TOTP, KMS, DPoP, …).
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve and who benefits?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed surface
+      description: Sketch the API or trait change.  Reference the v37 audit pillar(s) if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
