@@ -1,0 +1,18 @@
+[package]
+name = "authkit-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+authkit = { path = ".." }
+axum = "0.7"
+tower = { version = "0.5", features = ["util"] }
+tokio = { version = "1.0", features = ["rt-multi-thread"] }
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_target.rs"
+test = false
+doc = false

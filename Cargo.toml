@@ -18,3 +18,9 @@ tokio = { version = "1.0", features = ["full"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
+criterion = { version = "0.5", features = ["html_reports"] }
+rand = "0.8"
+
+[[bench]]
+name = "criterion_bench"
+harness = false
