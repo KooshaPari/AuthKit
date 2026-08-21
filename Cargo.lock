@@ -55,7 +55,9 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "chrono",
+ "criterion",
  "percent-encoding",
+ "rand",
  "serde",
  "serde_json",
  "subtle",
