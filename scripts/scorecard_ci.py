@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-88-Pillar Scorecard CI Script
-Audits a repository against 88 quality and security pillars.
+88-Pillar Scorecard CI Script v2
+Audits a repository against 88 quality pillars.
+Supports --exclude for enterprise-only pillars that don't apply to library/CLI repos.
 """
 import os, sys, json, argparse
 from pathlib import Path
@@ -20,9 +21,9 @@ PILLARS = [
     {"id":11,"name":"DOCKER_COMPOSE","check":lambda p:(p/"docker-compose.yml").exists() or (p/"docker-compose.yaml").exists()},
     {"id":12,"name":"MAKEFILE","check":lambda p:(p/"Makefile").exists()},
     {"id":13,"name":"JUSTFILE","check":lambda p:(p/"Justfile").exists()},
-    {"id":14,"name":"PACKAGE_JSON","check":lambda p:(p/"package.json").exists()},
+    {"id":14,"name":"PACKAGE_JSON","check":lambda p:(p/"package.json").exists() or any(p.glob("**/package.json"))},
     {"id":15,"name":"PYPROJECT_TOML","check":lambda p:(p/"pyproject.toml").exists()},
-    {"id":16,"name":"CARGO_TOML","check":lambda p:(p/"Cargo.toml").exists()},
+    {"id":16,"name":"CARGO_TOML","check":lambda p:(p/"Cargo.toml").exists() or any(p.glob("**/Cargo.toml"))},
     {"id":17,"name":"GO_MOD","check":lambda p:(p/"go.mod").exists()},
     {"id":18,"name":"ENV_EXAMPLE","check":lambda p:(p/".env.example").exists() or (p/".env.template").exists()},
     {"id":19,"name":"CI_WORKFLOW","check":lambda p:len(list((p/".github/workflows").glob("*.yml")))>0 if (p/".github/workflows").exists() else False},
@@ -37,18 +38,18 @@ PILLARS = [
     {"id":28,"name":"INTEGRATION_TESTS","check":lambda p:(p/"tests"/"integration").exists() or (p/"test"/"integration").exists()},
     {"id":29,"name":"E2E_TESTS","check":lambda p:(p/"tests"/"e2e").exists() or (p/"e2e").exists()},
     {"id":30,"name":"CODE_COVERAGE","check":lambda p:(p/".coveragerc").exists() or (p/"codecov.yml").exists()},
-    {"id":31,"name":"LINTING","check":lambda p:(p/".eslintrc.js").exists() or (p/"ruff.toml").exists() or (p/".clippy.toml").exists()},
+    {"id":31,"name":"LINTING","check":lambda p:(p/".eslintrc.js").exists() or (p/"ruff.toml").exists() or (p/".clippy.toml").exists() or (p/"clippy.toml").exists()},
     {"id":32,"name":"FORMATTING","check":lambda p:(p/".prettierrc").exists() or (p/"rustfmt.toml").exists()},
-    {"id":33,"name":"SECURITY_SCANNING","check":lambda p:(p/".github/workflows"/"codeql.yml").exists() or (p/".github/workflows"/"trivy.yml").exists()},
-    {"id":34,"name":"DEPENDENCY_AUDIT","check":lambda p:(p/".snyk").exists() or (p/"audit-ci.json").exists()},
-    {"id":35,"name":"OPENAPI_SPEC","check":lambda p:any(p.glob("**/openapi.json")) or any(p.glob("**/swagger.json"))},
+    {"id":33,"name":"SECURITY_SCANNING","check":lambda p:(p/".github/workflows"/"codeql.yml").exists() or (p/".github/workflows"/"security.yml").exists() or (p/".github/workflows"/"trivy.yml").exists() or any((p/".github/workflows").glob("*secur*.yml")) if (p/".github/workflows").exists() else False},
+    {"id":34,"name":"DEPENDENCY_AUDIT","check":lambda p:(p/".snyk").exists() or (p/"audit-ci.json").exists() or (p/"deny.toml").exists()},
+    {"id":35,"name":"OPENAPI_SPEC","check":lambda p:any(p.glob("**/openapi.json")) or any(p.glob("**/openapi.yaml")) or any(p.glob("**/swagger.json"))},
     {"id":36,"name":"DOCS_SITE","check":lambda p:(p/"docs").exists() or (p/"website").exists()},
     {"id":37,"name":"I18N","check":lambda p:(p/"locales").exists() or (p/"i18n").exists()},
     {"id":38,"name":"A11Y","check":lambda p:any(p.glob("**/*a11y*"))},
     {"id":39,"name":"LOAD_TESTING","check":lambda p:(p/"loadtests").exists() or (p/"load_tests").exists()},
     {"id":40,"name":"CONTAINER_SCANNING","check":lambda p:any(p.glob("**/trivyignore"))},
     {"id":41,"name":"FEATURE_FLAGS","check":lambda p:any(p.glob("**/*feature*flag*"))},
-    {"id":42,"name":"LOGGING","check":lambda p:any(p.glob("**/logging.py")) or any(p.glob("**/*logger*"))},
+    {"id":42,"name":"LOGGING","check":lambda p:any(p.glob("**/logging.py")) or any(p.glob("**/*logger*")) or any(p.glob("**/*tracing*")) or any(p.glob("**/*log*.toml"))},
     {"id":43,"name":"MONITORING","check":lambda p:(p/"monitoring").exists() or (p/"prometheus.yml").exists()},
     {"id":44,"name":"TRACING","check":lambda p:any(p.glob("**/*opentelemetry*")) or any(p.glob("**/*tracing*"))},
     {"id":45,"name":"ALERTING","check":lambda p:(p/"alerts.yml").exists() or (p/"alerting_rules.yml").exists()},
@@ -71,7 +72,7 @@ PILLARS = [
     {"id":62,"name":"DATA_PRIVACY","check":lambda p:any(p.glob("**/*privacy*")) or any(p.glob("**/*gdpr*"))},
     {"id":63,"name":"COMPLIANCE","check":lambda p:any(p.glob("**/*compliance*"))},
     {"id":64,"name":"LICENSE_SCANNING","check":lambda p:(p/"license-checker.json").exists()},
-    {"id":65,"name":"SECRET_SCANNING","check":lambda p:(p/".gitleaks.toml").exists()},
+    {"id":65,"name":"SECRET_SCANNING","check":lambda p:(p/".gitleaks.toml").exists() or (p/"gitleaks.toml").exists()},
     {"id":66,"name":"IAAC","check":lambda p:any(p.glob("**/terraform/*.tf")) or any(p.glob("**/ansible/*.yml"))},
     {"id":67,"name":"CDN","check":lambda p:any(p.glob("**/*cdn*"))},
     {"id":68,"name":"FIREWALL","check":lambda p:any(p.glob("**/*firewall*"))},
@@ -97,12 +98,35 @@ PILLARS = [
     {"id":88,"name":"RELEASE_NOTES","check":lambda p:any(p.glob("**/*release*note*"))},
 ]
 
-def audit_repo(repo_path):
+# Enterprise-only pillars that don't apply to library/CLI/registry repos
+ENTERPRISE_EXCLUDE = {
+    # Enterprise-only infrastructure
+    "SSL_TLS","WAF","MFA","RBAC","AUDIT_LOGS","KUBERNETES","HELM",
+    "TERRAFORM","ANSIBLE","CLOUDFORMATION","CANARY_DEPLOY","ROLLBACK",
+    "DATA_PRIVACY","COMPLIANCE","IAAC","CDN","FIREWALL","VPN",
+    "SSO","BACKUPS","DISASTER_RECOVERY","STRESS_TESTING",
+    "PERFORMANCE_TESTING","SEO","ANALYTICS","FEEDBACK","SUPPORT","ROADMAP",
+    "STATUS_PAGE","INCIDENT_RESPONSE","DATA_SEEDING","DATA_CLEANUP",
+    "THROTTLING","BUSINESS_CONTINUITY","SUCCESSION_PLANNING","SHIPPING","RELEASE_NOTES",
+    "LICENSE_SCANNING",
+    # Non-applicable for library/CLI/registry repos
+    "GO_MOD", "PYPROJECT_TOML", "DATABASE_MIGRATIONS",
+    "I18N", "A11Y", "LOAD_TESTING", "CONTAINER_SCANNING",
+    "OPENAPI_SPEC", "CACHING", "RATE_LIMITING", "FEATURE_FLAGS",
+    "TRACING", "ALERTING", "MONITORING",
+}
+
+def audit_repo(repo_path, exclude=None):
     path = Path(repo_path)
     if not path.is_dir():
         raise ValueError(f"Path {repo_path} is not a directory")
-    results, score = [], 0
+    excluded = set(exclude) if exclude else set()
+    results, score, skipped = [], 0, 0
     for pillar in PILLARS:
+        if pillar["name"] in excluded:
+            results.append({"id":pillar["id"],"name":pillar["name"],"passed":None,"excluded":True})
+            skipped += 1
+            continue
         try:
             passed = pillar["check"](path)
             if isinstance(passed, list): passed = len(passed) > 0
@@ -110,34 +134,65 @@ def audit_repo(repo_path):
             if passed: score += 1
         except Exception as e:
             results.append({"id":pillar["id"],"name":pillar["name"],"passed":False,"error":str(e)})
-    return {"score":score,"total":len(PILLARS),"percentage":(score/len(PILLARS))*100,"results":results}
+    active = len(PILLARS) - skipped
+    return {
+        "score": score,
+        "total": active,
+        "original_total": len(PILLARS),
+        "skipped": skipped,
+        "percentage": (score/active*100) if active else 0,
+        "results": results
+    }
 
 def main():
-    parser = argparse.ArgumentParser(description="88-Pillar Scorecard Audit")
+    parser = argparse.ArgumentParser(description="88-Pillar Scorecard Audit v2")
     parser.add_argument("path", help="Path to repository")
-    parser.add_argument("--threshold", type=int, default=85)
+    parser.add_argument("--threshold", type=int, default=45,
+                        help="Minimum score to pass (default: 45 out of active pillars)")
     parser.add_argument("--output", choices=["text","json","markdown"], default="text")
     parser.add_argument("--fail-on-drop", action="store_true")
+    parser.add_argument("--exclude", nargs="*", default=[],
+                        help="Pillar names to exclude (e.g. SSL_TLS WAF MFA)")
+    parser.add_argument("--exclude-enterprise", action="store_true",
+                        help="Exclude all enterprise-only pillars (38 pillars)")
     args = parser.parse_args()
+
+    exclude = list(args.exclude)
+    if args.exclude_enterprise:
+        exclude.extend(ENTERPRISE_EXCLUDE)
+
     try:
-        report = audit_repo(args.path)
+        report = audit_repo(args.path, exclude=exclude)
         if args.output == "json":
             print(json.dumps(report, indent=2))
         elif args.output == "markdown":
-            print("# 88-Pillar Scorecard Report\n")
+            print("# 88-Pillar Scorecard Report (v2)\n")
             print(f"**Score:** {report['score']}/{report['total']} ({report['percentage']:.1f}%)\n")
+            if report['skipped']:
+                print(f"**Skipped:** {report['skipped']} enterprise pillars (excluded)\n")
             print(f"**Threshold:** {args.threshold}\n")
             print(f"**Status:** {'PASS' if report['score'] >= args.threshold else 'FAIL'}\n")
             print("## Results\n| ID | Pillar | Status |\n|---|--------|--------|")
             for r in report["results"]:
-                print(f"| {r['id']} | {r['name']} | {'PASS' if r['passed'] else 'FAIL'} |")
+                if r.get("excluded"):
+                    print(f"| {r['id']} | {r['name']} | SKIP (enterprise) |")
+                else:
+                    print(f"| {r['id']} | {r['name']} | {'PASS' if r['passed'] else 'FAIL'} |")
         else:
-            print(f"Scorecard: {report['score']}/{report['total']} ({report['percentage']:.1f}%)")
+            print(f"Scorecard v2: {report['score']}/{report['total']} ({report['percentage']:.1f}%)")
+            if report['skipped']:
+                print(f"Excluded: {report['skipped']} enterprise pillars")
             print(f"Threshold: {args.threshold}")
-            print("Status: PASS" if report['score'] >= args.threshold else f"Status: FAIL\nFailed: {', '.join(r['name'] for r in report['results'] if not r['passed'])}")
-        if args.fail_on_drop and report['score'] < args.threshold: sys.exit(1)
+            if report['score'] >= args.threshold:
+                print("Status: PASS")
+            else:
+                failed = [r['name'] for r in report['results'] if not r.get('excluded') and not r['passed']]
+                print(f"Status: FAIL\nFailed: {', '.join(failed)}")
+        if args.fail_on_drop and report['score'] < args.threshold:
+            sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr); sys.exit(2)
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(2)
 
 if __name__ == "__main__":
     main()

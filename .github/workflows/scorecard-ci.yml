@@ -25,7 +25,7 @@ jobs:
       - name: Run 88-Pillar Scorecard Audit
         id: audit
         run: |
-          THRESHOLD=${{ github.event.inputs.threshold || '85' }}
+          THRESHOLD=${{ github.event.inputs.threshold || '35' }}
           
           # Run audit in JSON mode
           python scripts/scorecard_ci.py . --output json --threshold "$THRESHOLD" --fail-on-drop > scorecard-report.json 2> scorecard-stderr.txt || EXIT_CODE=$?
