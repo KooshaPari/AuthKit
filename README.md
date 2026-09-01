@@ -6,6 +6,8 @@ ecosystem. It is the successor to the now-archived
 absorbs the FRs that landed in `Authvault` worktrees but were never merged
 into `Authvault` main before the archive marker (commit `c7994b9`).
 
+[![AI slop inside](https://sladge.net/badge.svg)](https://sladge.net) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/KooshaPari/AuthKit/total)](https://github.com/KooshaPari/AuthKit/releases)
+
 ## Status
 
 - **FR-AUTHV-018** — PKCE state→session binding at middleware: **SHIPPED** (this crate, PR #1).
